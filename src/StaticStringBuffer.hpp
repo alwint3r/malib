@@ -11,8 +11,28 @@ struct StaticStringBuffer {
     NullPointerInput,
   };
 
-  [[nodiscard]] Error copy(StringLike auto &value);
-  [[nodiscard]] Error copy(CStyleString auto &value, std::size_t size);
+  [[nodiscard]] Error copy(StringLike auto value) {
+    if constexpr (std::is_same_v<std::remove_cv_t<
+                                     std::remove_reference_t<decltype(value)>>,
+                                 std::string>) {
+      return copy(value.c_str(), value.size());
+    } else {
+      return copy(value.data(), value.size());
+    }
+  }
+  [[nodiscard]] Error copy(CStyleString auto value, std::size_t size) {
+    if (value == nullptr) {
+      return Error::NullPointerInput;
+    }
+
+    if (size > MaxSize) {
+      return Error::MaxSizeExceeded;
+    }
+
+    std::memcpy(buf_, value, size);
+    size_ = size;
+    return Error::Ok;
+  }
 
   std::string_view view() const noexcept {
     return std::string_view{buf_, size_};
