@@ -1,5 +1,7 @@
 #include <unity.h>
 
+#include <thread>
+
 #include "RingBuffer.hpp"
 
 void test_push_pop() {
@@ -49,8 +51,68 @@ void test_size() {
   TEST_ASSERT_EQUAL(1, buffer.size());
 }
 
+void test_wraparound() {
+  using SmallRingBuffer = malib::RingBuffer<int, 3>;
+  SmallRingBuffer buffer{};
+
+  // Fill buffer
+  buffer.push(1);
+  buffer.push(2);
+  buffer.push(3);
+
+  // Pop two items
+  buffer.pop();
+  buffer.pop();
+
+  // Push new items to trigger wraparound
+  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(4));
+  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(5));
+
+  auto result = buffer.pop();
+  TEST_ASSERT_EQUAL(3, result.value());
+  result = buffer.pop();
+  TEST_ASSERT_EQUAL(4, result.value());
+  result = buffer.pop();
+  TEST_ASSERT_EQUAL(5, result.value());
+}
+
+void test_different_types() {
+  using SmallRingBuffer = malib::RingBuffer<std::string, 2>;
+  SmallRingBuffer str_buffer{};
+  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, str_buffer.push("test1"));
+  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, str_buffer.push("test2"));
+
+  auto result = str_buffer.pop();
+  TEST_ASSERT_EQUAL_STRING("test1", result.value().c_str());
+}
+
+void test_concurrent_access() {
+  using SmallRingBuffer = malib::RingBuffer<int, 100>;
+  SmallRingBuffer buffer{};
+
+  std::thread producer([&]() {
+    for (int i = 0; i < 50; i++) {
+      buffer.push(i);
+    }
+  });
+
+  std::thread consumer([&]() {
+    for (int i = 0; i < 50; i++) {
+      auto result = buffer.pop();
+      TEST_ASSERT_TRUE(result.has_value());
+    }
+  });
+
+  producer.join();
+  consumer.join();
+  TEST_ASSERT_TRUE(buffer.empty());
+}
+
 void test_RingBuffer() {
   RUN_TEST(test_push_pop);
   RUN_TEST(test_clear);
   RUN_TEST(test_size);
+  RUN_TEST(test_wraparound);
+  RUN_TEST(test_different_types);
+  RUN_TEST(test_concurrent_access);
 }
