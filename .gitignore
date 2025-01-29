@@ -5,3 +5,4 @@ zig-out
 *.so
 .DS_Store
 .env
+.vscode
