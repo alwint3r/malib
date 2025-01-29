@@ -51,8 +51,20 @@ pub fn build(b: *std.Build) void {
 
     test_module.addCSourceFiles(.{
         .root = b.path("test"),
-        .files = &[_][]const u8{ "test.cpp", "test_FixedStringBuffer.cpp", "test_Token.cpp", "test_Tokenizer.cpp" },
-        .flags = &[_][]const u8{ "-std=c++23", "-I", "unity/src", "-I", "src" },
+        .files = &[_][]const u8{
+            "test.cpp",
+            "test_FixedStringBuffer.cpp",
+            "test_Token.cpp",
+            "test_Tokenizer.cpp",
+            "test_RingBuffer.cpp",
+        },
+        .flags = &[_][]const u8{
+            "-std=c++23",
+            "-I",
+            "unity/src",
+            "-I",
+            "src",
+        },
     });
 
     const test_exe = b.addExecutable(.{
