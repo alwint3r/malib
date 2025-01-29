@@ -23,5 +23,23 @@ pub fn build(b: *std.Build) void {
         .root_module = lib_module,
     });
 
+    // Unity
+    const unity = b.addModule("unity", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    unity.addCSourceFiles(.{
+        .root = b.path("unity/src"),
+        .files = &[_][]const u8{"unity.c"},
+        .flags = &[_][]const u8{"-std=c11"},
+    });
+
+    const unity_lib = b.addStaticLibrary(.{
+        .name = "unity",
+        .root_module = unity,
+    });
+
     b.installArtifact(lib);
+    b.installArtifact(unity_lib);
 }
