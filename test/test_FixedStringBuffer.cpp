@@ -1,9 +1,9 @@
 #include <unity.h>
 
-#include "StaticStringBuffer.hpp"
+#include "FixedStringBuffer.hpp"
 
-void test_static_string_buffer_copy() {
-  using SmallBuffer = malib::StaticStringBuffer<10>;
+void test_fixed_string_buffer_copy() {
+  using SmallBuffer = malib::FixedStringBuffer<10>;
   SmallBuffer buffer{};
   const char* cmd1 = "Hello";
   TEST_ASSERT_EQUAL(SmallBuffer::Error::Ok, buffer.copy(cmd1, 5));

@@ -4,7 +4,7 @@
 
 namespace malib {
 template <std::size_t MaxSize>
-struct StaticStringBuffer {
+struct FixedStringBuffer {
   enum class Error {
     Ok,
     MaxSizeExceeded,

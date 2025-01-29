@@ -1,3 +1,3 @@
-#include "StaticStringBuffer.hpp"
+#include "FixedStringBuffer.hpp"
 
-template class malib::StaticStringBuffer<10>;
+template class malib::FixedStringBuffer<10>;
