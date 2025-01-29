@@ -23,7 +23,6 @@ void test_fixed_string_buffer_copy() {
   TEST_ASSERT_EQUAL(SmallBuffer::Error::NullPointerInput, buffer.copy(cmd4, 1));
 }
 
-
 void test_fixed_string_buffer_reset() {
   using SmallBuffer = malib::FixedStringBuffer<10>;
   SmallBuffer buffer{};
