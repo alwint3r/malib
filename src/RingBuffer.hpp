@@ -5,6 +5,7 @@
 #include <cstring>
 #include <expected>
 #include <mutex>
+#include <vector>
 
 namespace malib {
 template <std::copyable T, size_t Capacity>
@@ -16,7 +17,6 @@ class RingBuffer {
   RingBuffer(const RingBuffer&) = delete;
   RingBuffer& operator=(const RingBuffer&) = delete;
 
-  [[nodiscard]]
   Error push(const T& value) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (count_ == Capacity) {
@@ -41,6 +41,26 @@ class RingBuffer {
     return value;
   }
 
+  std::expected<T, Error> peek() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (count_ == 0) {
+      return std::unexpected(Error::Empty);
+    }
+    return buffer_[head_];
+  }
+
+  std::pair<std::array<T, Capacity>, size_t> consume_all() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::array<T, Capacity> elements;
+    size_t count = 0;
+    while (count_ > 0) {
+      elements[count++] = buffer_[head_];
+      head_ = (head_ + 1) % Capacity;
+      count_--;
+    }
+    return {elements, count};
+  }
+
   size_t size() const { return count_; }
 
   bool empty() const { return count_ == 0; }
@@ -59,6 +79,6 @@ class RingBuffer {
   size_t tail_{0};
   size_t count_{0};
   std::array<T, Capacity> buffer_;
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
 };
 }  // namespace malib

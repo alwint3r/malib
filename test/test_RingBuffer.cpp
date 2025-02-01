@@ -108,6 +108,53 @@ void test_concurrent_access() {
   TEST_ASSERT_TRUE(buffer.empty());
 }
 
+void test_peek() {
+  using SmallRingBuffer = malib::RingBuffer<int, 3>;
+  SmallRingBuffer buffer{};
+  buffer.push(1);
+  buffer.push(2);
+  buffer.push(3);
+
+  auto result = buffer.peek();
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(1, result.value());
+
+  buffer.pop();
+  result = buffer.peek();
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(2, result.value());
+
+  buffer.pop();
+  result = buffer.peek();
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(3, result.value());
+
+  buffer.pop();
+  result = buffer.peek();
+  TEST_ASSERT_FALSE(result.has_value());
+  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::Empty, result.error());
+}
+
+void test_consume_all() {
+  using SmallRingBuffer = malib::RingBuffer<int, 3>;
+  SmallRingBuffer buffer{};
+  buffer.push(1);
+  buffer.push(2);
+  buffer.push(3);
+
+  auto [elements, count] = buffer.consume_all();
+  TEST_ASSERT_EQUAL(3, count);
+  TEST_ASSERT_EQUAL(1, elements[0]);
+  TEST_ASSERT_EQUAL(2, elements[1]);
+  TEST_ASSERT_EQUAL(3, elements[2]);
+  TEST_ASSERT_TRUE(buffer.empty());
+
+  SmallRingBuffer empty_buffer{};
+  auto [empty_elements, empty_count] = empty_buffer.consume_all();
+  TEST_ASSERT_EQUAL(0, empty_count);
+  TEST_ASSERT_TRUE(empty_buffer.empty());
+}
+
 void test_RingBuffer() {
   RUN_TEST(test_push_pop);
   RUN_TEST(test_clear);
@@ -115,4 +162,6 @@ void test_RingBuffer() {
   RUN_TEST(test_wraparound);
   RUN_TEST(test_different_types);
   RUN_TEST(test_concurrent_access);
+  RUN_TEST(test_peek);
+  RUN_TEST(test_consume_all);
 }
