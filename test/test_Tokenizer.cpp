@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include "malib/Tokenizer.hpp"
+#include "malib/Error.hpp"
 
 void test_tokenizer_tokenize_ls_al() {
   using SmallTokenizer = malib::Tokenizer<10>;
@@ -23,7 +24,7 @@ void test_tokenizer_tokenize_exceed_max_tokens() {
   TinyTokenizer tinyTokenizer{};
   auto result = tinyTokenizer.tokenize("ls -al -h");
   TEST_ASSERT_FALSE(result.has_value());
-  TEST_ASSERT_EQUAL(TinyTokenizer::Error::MaximumTokensExceeded,
+  TEST_ASSERT_EQUAL(malib::Error::MaximumSizeExceeded,
                     result.error());
 }
 
@@ -90,7 +91,7 @@ void test_tokenizer_element_access_out_of_bounds() {
 
   auto token = tokenizer[2];
   TEST_ASSERT_FALSE(token.has_value());
-  TEST_ASSERT_EQUAL(SmallTokenizer::Error::TokenIndexOutOfRange, token.error());
+  TEST_ASSERT_EQUAL(malib::Error::IndexOutOfRange, token.error());
 }
 
 void test_Tokenizer() {

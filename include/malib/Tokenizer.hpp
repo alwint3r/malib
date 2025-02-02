@@ -5,17 +5,13 @@
 #include <expected>
 #include <string_view>
 
-#include "Token.hpp"
+#include "malib/Token.hpp"
+#include "malib/Error.hpp"
 
 namespace malib {
 template <std::size_t MaxTokens>
 class Tokenizer {
  public:
-  enum class Error : std::uint8_t {
-    TokenIndexOutOfRange,
-    MaximumTokensExceeded,
-  };
-
   std::expected<std::size_t, Error> tokenize(std::string_view str) {
     count_ = 0;
     std::size_t pos = 0;
@@ -27,7 +23,7 @@ class Tokenizer {
 
     while (pos < size) {
       if (count_ >= MaxTokens) {
-        return std::unexpected(Error::MaximumTokensExceeded);
+        return std::unexpected(Error::MaximumSizeExceeded);
       }
 
       while (std::isspace(buf[pos])) {
@@ -65,7 +61,7 @@ class Tokenizer {
 
   std::expected<Token, Error> operator[](std::size_t idx) const noexcept {
     if (idx >= MaxTokens || idx >= count_) {
-      return std::unexpected(Error::TokenIndexOutOfRange);
+      return std::unexpected(Error::IndexOutOfRange);
     }
     return markers_[idx];
   }

@@ -1,12 +1,13 @@
 #include <unity.h>
 
 #include <malib/Token.hpp>
+#include <malib/Error.hpp>
 
 void test_token_view_nullptr() {
   malib::Token tok1{nullptr, 0, 0};
   auto result1 = tok1.view();
   TEST_ASSERT_FALSE(result1.has_value());
-  TEST_ASSERT_EQUAL(malib::Token::Error::NullPointerData, result1.error());
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result1.error());
 }
 
 void test_token_view_invalid_size() {
@@ -14,7 +15,7 @@ void test_token_view_invalid_size() {
   malib::Token tok2{data, 1, 0};
   auto result2 = tok2.view();
   TEST_ASSERT_FALSE(result2.has_value());
-  TEST_ASSERT_EQUAL(malib::Token::Error::InvalidSize, result2.error());
+  TEST_ASSERT_EQUAL(malib::Error::InvalidSize, result2.error());
 }
 
 void test_token_view_valid_case() {
