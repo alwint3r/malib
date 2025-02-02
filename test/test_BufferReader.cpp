@@ -5,7 +5,7 @@
 
 void test_readAll() {
   using RingBuffer = malib::RingBuffer<char, 3>;
-  using BufferReader = malib::BufferReader<RingBuffer, 3>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
   buffer.push('a');
   buffer.push('b');
@@ -27,7 +27,7 @@ void test_readAll() {
 
 void test_readAll_emptyBuffer() {
   using RingBuffer = malib::RingBuffer<char, 3>;
-  using BufferReader = malib::BufferReader<RingBuffer, 3>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
 
   char buf[3] = {};
@@ -38,7 +38,7 @@ void test_readAll_emptyBuffer() {
 
 void test_readAll_nullPointer() {
   using RingBuffer = malib::RingBuffer<char, 3>;
-  using BufferReader = malib::BufferReader<RingBuffer, 3>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
   buffer.push('a');
 
@@ -49,7 +49,7 @@ void test_readAll_nullPointer() {
 
 void test_readUntil() {
   using RingBuffer = malib::RingBuffer<char, 4>;
-  using BufferReader = malib::BufferReader<RingBuffer, 4>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
   buffer.push('a');
   buffer.push('b');
@@ -65,7 +65,7 @@ void test_readUntil() {
 
 void test_readUntil_valueNotFound() {
   using RingBuffer = malib::RingBuffer<char, 4>;
-  using BufferReader = malib::BufferReader<RingBuffer, 4>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
   buffer.push('a');
   buffer.push('b');
@@ -81,7 +81,7 @@ void test_readUntil_valueNotFound() {
 
 void test_readUntil_nullPointer() {
   using RingBuffer = malib::RingBuffer<char, 4>;
-  using BufferReader = malib::BufferReader<RingBuffer, 4>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
   buffer.push('a');
 
@@ -92,7 +92,7 @@ void test_readUntil_nullPointer() {
 
 void test_readUntil_emptyBuffer() {
   using RingBuffer = malib::RingBuffer<char, 4>;
-  using BufferReader = malib::BufferReader<RingBuffer, 4>;
+  using BufferReader = malib::BufferReader<RingBuffer>;
   RingBuffer buffer{};
 
   char buf[4] = {};
