@@ -1,16 +1,11 @@
 #pragma once
 
+#include "MalibError.hpp"
 #include "StringConcepts.hpp"
 
 namespace malib {
 template <std::size_t MaxSize>
 struct FixedStringBuffer {
-  enum class Error {
-    Ok,
-    MaxSizeExceeded,
-    NullPointerInput,
-  };
-
   [[nodiscard]] Error copy(StringLike auto value) {
     if constexpr (std::is_same_v<std::remove_cv_t<
                                      std::remove_reference_t<decltype(value)>>,
@@ -26,7 +21,7 @@ struct FixedStringBuffer {
     }
 
     if (size > MaxSize) {
-      return Error::MaxSizeExceeded;
+      return Error::MaximumSizeExceeded;
     }
 
     std::memcpy(buf_, value, size);

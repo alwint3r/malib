@@ -14,7 +14,10 @@ pub fn build(b: *std.Build) void {
 
     lib_module.addCSourceFiles(.{
         .root = b.path("src"),
-        .files = &[_][]const u8{ "placeholders.cpp", "Token.cpp" },
+        .files = &[_][]const u8{
+            "placeholders.cpp",
+            "Token.cpp",
+        },
         .flags = lib_cppflags,
     });
 
@@ -57,6 +60,7 @@ pub fn build(b: *std.Build) void {
             "test_Token.cpp",
             "test_Tokenizer.cpp",
             "test_RingBuffer.cpp",
+            "test_BufferReader.cpp",
         },
         .flags = &[_][]const u8{
             "-std=c++23",

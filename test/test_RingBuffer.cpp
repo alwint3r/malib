@@ -7,10 +7,10 @@
 void test_push_pop() {
   using SmallRingBuffer = malib::RingBuffer<int, 3>;
   SmallRingBuffer buffer{};
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(1));
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(2));
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(3));
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::Full, buffer.push(4));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(1));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(2));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(3));
+  TEST_ASSERT_EQUAL(malib::Error::BufferFull, buffer.push(4));
 
   auto result = buffer.pop();
   TEST_ASSERT_TRUE(result.has_value());
@@ -26,7 +26,7 @@ void test_push_pop() {
 
   result = buffer.pop();
   TEST_ASSERT_FALSE(result.has_value());
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::Empty, result.error());
+  TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, result.error());
 }
 
 void test_clear() {
@@ -36,7 +36,7 @@ void test_clear() {
   buffer.push(2);
   buffer.clear();
   TEST_ASSERT_TRUE(buffer.empty());
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(3));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(3));
 }
 
 void test_size() {
@@ -65,8 +65,8 @@ void test_wraparound() {
   buffer.pop();
 
   // Push new items to trigger wraparound
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(4));
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, buffer.push(5));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(4));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, buffer.push(5));
 
   auto result = buffer.pop();
   TEST_ASSERT_EQUAL(3, result.value());
@@ -79,8 +79,8 @@ void test_wraparound() {
 void test_different_types() {
   using SmallRingBuffer = malib::RingBuffer<std::string, 2>;
   SmallRingBuffer str_buffer{};
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, str_buffer.push("test1"));
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::OK, str_buffer.push("test2"));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, str_buffer.push("test1"));
+  TEST_ASSERT_EQUAL(malib::Error::Ok, str_buffer.push("test2"));
 
   auto result = str_buffer.pop();
   TEST_ASSERT_EQUAL_STRING("test1", result.value().c_str());
@@ -132,7 +132,7 @@ void test_peek() {
   buffer.pop();
   result = buffer.peek();
   TEST_ASSERT_FALSE(result.has_value());
-  TEST_ASSERT_EQUAL(SmallRingBuffer::Error::Empty, result.error());
+  TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, result.error());
 }
 
 void test_consume_all() {

@@ -7,11 +7,14 @@
 #include <mutex>
 #include <vector>
 
+#include "MalibError.hpp"
+
 namespace malib {
 template <std::copyable T, size_t Capacity>
 class RingBuffer {
  public:
-  enum class Error { OK, Full, Empty };
+  using ValueType = T;
+
   RingBuffer() = default;
   ~RingBuffer() = default;
   RingBuffer(const RingBuffer&) = delete;
@@ -20,19 +23,19 @@ class RingBuffer {
   Error push(const T& value) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (count_ == Capacity) {
-      return Error::Full;
+      return Error::BufferFull;
     }
 
     buffer_[tail_] = value;
     tail_ = (tail_ + 1) % Capacity;
     count_++;
-    return Error::OK;
+    return Error::Ok;
   }
 
   std::expected<T, Error> pop() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (count_ == 0) {
-      return std::unexpected(Error::Empty);
+      return std::unexpected(Error::BufferEmpty);
     }
 
     T value = buffer_[head_];
@@ -44,7 +47,7 @@ class RingBuffer {
   std::expected<T, Error> peek() const {
     std::lock_guard<std::mutex> lock(mutex_);
     if (count_ == 0) {
-      return std::unexpected(Error::Empty);
+      return std::unexpected(Error::BufferEmpty);
     }
     return buffer_[head_];
   }
