@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include <Token.hpp>
+#include <malib/Token.hpp>
 
 void test_token_view_nullptr() {
   malib::Token tok1{nullptr, 0, 0};

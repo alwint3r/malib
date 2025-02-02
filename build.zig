@@ -10,7 +10,10 @@ pub fn build(b: *std.Build) void {
         .link_libcpp = true,
     });
 
-    const lib_cppflags = &[_][]const u8{"-std=c++23"};
+    const lib_cppflags = &[_][]const u8{
+        "-std=c++23",
+        "-Iinclude",
+    };
 
     lib_module.addCSourceFiles(.{
         .root = b.path("src"),
@@ -67,7 +70,7 @@ pub fn build(b: *std.Build) void {
             "-I",
             "unity/src",
             "-I",
-            "src",
+            "include",
         },
     });
 

@@ -8,5 +8,5 @@ idf_component_register(
         "src/placeholders.cpp"
         "src/Token.cpp"
     INCLUDE_DIRS
-        "src"
+        "include"
 )

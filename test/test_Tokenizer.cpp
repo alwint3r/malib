@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "Tokenizer.hpp"
+#include "malib/Tokenizer.hpp"
 
 void test_tokenizer_tokenize_ls_al() {
   using SmallTokenizer = malib::Tokenizer<10>;

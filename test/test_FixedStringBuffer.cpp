@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "FixedStringBuffer.hpp"
+#include "malib/FixedStringBuffer.hpp"
 
 void test_fixed_string_buffer_copy() {
   using SmallBuffer = malib::FixedStringBuffer<10>;

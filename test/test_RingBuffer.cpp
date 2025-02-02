@@ -2,7 +2,7 @@
 
 #include <thread>
 
-#include "RingBuffer.hpp"
+#include "malib/RingBuffer.hpp"
 
 void test_push_pop() {
   using SmallRingBuffer = malib::RingBuffer<int, 3>;

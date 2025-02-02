@@ -7,7 +7,7 @@
 #include <mutex>
 #include <vector>
 
-#include "MalibError.hpp"
+#include "malib/Error.hpp"
 
 namespace malib {
 template <std::copyable T, size_t Capacity>

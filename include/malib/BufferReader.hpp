@@ -3,8 +3,8 @@
 #include <concepts>
 #include <variant>
 
-#include "MalibError.hpp"
-#include "RingBuffer.hpp"
+#include "malib/Error.hpp"
+#include "malib/RingBuffer.hpp"
 
 namespace malib {
 template <typename B, size_t N>

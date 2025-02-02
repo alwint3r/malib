@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MalibError.hpp"
-#include "StringConcepts.hpp"
+#include "malib/Error.hpp"
+#include "malib/StringConcepts.hpp"
 
 namespace malib {
 template <std::size_t MaxSize>

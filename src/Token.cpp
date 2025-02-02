@@ -1,4 +1,4 @@
-#include "Token.hpp"
+#include "malib/Token.hpp"
 
 std::expected<std::string_view, malib::Token::Error> malib::Token::view()
     const {

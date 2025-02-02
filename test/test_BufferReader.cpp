@@ -1,7 +1,7 @@
 #include <unity.h>
 
-#include "BufferReader.hpp"
-#include "RingBuffer.hpp"
+#include "malib/BufferReader.hpp"
+#include "malib/RingBuffer.hpp"
 
 void test_readAll() {
   using RingBuffer = malib::RingBuffer<char, 3>;
