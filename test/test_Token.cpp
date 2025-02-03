@@ -42,6 +42,15 @@ void test_token_view_edge_case_full_string() {
   TEST_ASSERT_EQUAL_STRING_LEN("hello", result5->data(), 5);
 }
 
+void test_token_default_initialie() {
+  malib::Token tok6{};
+  auto result6 = tok6.view();
+  TEST_ASSERT_EQUAL(0, tok6.start);
+  TEST_ASSERT_EQUAL(0, tok6.end);
+  TEST_ASSERT_FALSE(result6.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result6.error());
+}
+
 void test_Token() {
   RUN_TEST(test_token_view_nullptr);
   RUN_TEST(test_token_view_invalid_size);

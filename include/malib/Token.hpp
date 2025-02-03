@@ -9,9 +9,9 @@
 
 namespace malib {
 struct Token {
-  const char* ptr;
-  size_t start;
-  size_t end;
+  const char* ptr{nullptr};
+  size_t start{0};
+  size_t end{0};
 
   std::expected<std::string_view, Error> view() const;
 };

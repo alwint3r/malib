@@ -9,6 +9,7 @@
 namespace malib {
 template <typename B>
 concept buffer_like = requires(B t) {
+  typename B::ValueType;
   { t.push(std::declval<typename B::ValueType>()) } -> std::same_as<Error>;
   { t.pop() } -> std::same_as<std::expected<typename B::ValueType, Error>>;
   { t.peek() } -> std::same_as<std::expected<typename B::ValueType, Error>>;
@@ -20,8 +21,7 @@ concept buffer_like = requires(B t) {
 
 static_assert(buffer_like<RingBuffer<int, 0>>);
 
-template <typename B>
-  requires buffer_like<B>
+template <buffer_like B>
 struct BufferReader {
   using ValueType = typename B::ValueType;
 
