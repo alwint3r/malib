@@ -42,7 +42,6 @@ struct tiny {
       return tokenizer_result.error();
     }
 
-    auto tokens_count = tokenizer_result.value();
     auto command = std::string(tokenizer_[0].value().view().value());
     if (isCommandValid(command) == false) {
       return Error::InvalidCommand;
