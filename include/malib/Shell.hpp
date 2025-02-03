@@ -44,6 +44,8 @@ struct tiny {
 
     auto command = std::string(tokenizer_[0].value().view().value());
     if (isCommandValid(command) == false) {
+      std::string_view error_message = "Invalid command\n";
+      output.write(error_message.data(), error_message.size());
       return Error::InvalidCommand;
     }
 
@@ -52,6 +54,8 @@ struct tiny {
 
     auto command_cb = registry_[command];
     if (command_cb == nullptr) {
+      std::string_view error_message = "Command has no executable code\n";
+      output.write(error_message.data(), error_message.size());
       return Error::NullPointerMember;
     }
     auto result = command_cb(command, args);
