@@ -1,7 +1,7 @@
 #include <unity.h>
 
-#include "malib/Tokenizer.hpp"
 #include "malib/Error.hpp"
+#include "malib/Tokenizer.hpp"
 
 void test_tokenizer_tokenize_ls_al() {
   using SmallTokenizer = malib::Tokenizer<10>;
@@ -24,8 +24,7 @@ void test_tokenizer_tokenize_exceed_max_tokens() {
   TinyTokenizer tinyTokenizer{};
   auto result = tinyTokenizer.tokenize("ls -al -h");
   TEST_ASSERT_FALSE(result.has_value());
-  TEST_ASSERT_EQUAL(malib::Error::MaximumSizeExceeded,
-                    result.error());
+  TEST_ASSERT_EQUAL(malib::Error::MaximumSizeExceeded, result.error());
 }
 
 void test_tokenizer_tokenize_ls() {
@@ -94,6 +93,32 @@ void test_tokenizer_element_access_out_of_bounds() {
   TEST_ASSERT_EQUAL(malib::Error::IndexOutOfRange, token.error());
 }
 
+void test_tokenizer_tokens_vector() {
+  using SmallTokenizer = malib::Tokenizer<10>;
+  SmallTokenizer tokenizer{};
+  auto result = tokenizer.tokenize("ls -al -h");
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL_INT(3, result.value());
+
+  auto tokens = tokenizer.tokens_vector();
+  TEST_ASSERT_EQUAL_INT(3, tokens.size());
+
+  TEST_ASSERT_EQUAL(tokens[0].start, 0);
+  TEST_ASSERT_EQUAL(tokens[0].end, 1);
+  auto view = tokens[0].view().value();
+  TEST_ASSERT_EQUAL_STRING_LEN("ls", view.data(), view.size());
+
+  TEST_ASSERT_EQUAL(tokens[1].start, 3);
+  TEST_ASSERT_EQUAL(tokens[1].end, 5);
+  view = tokens[1].view().value();
+  TEST_ASSERT_EQUAL_STRING_LEN("-al", view.data(), view.size());
+
+  TEST_ASSERT_EQUAL(tokens[2].start, 7);
+  TEST_ASSERT_EQUAL(tokens[2].end, 8);
+  view = tokens[2].view().value();
+  TEST_ASSERT_EQUAL_STRING_LEN("-h", view.data(), view.size());
+}
+
 void test_Tokenizer() {
   RUN_TEST(test_tokenizer_tokenize_ls_al);
   RUN_TEST(test_tokenizer_tokenize_ls_al_h);
@@ -104,4 +129,5 @@ void test_Tokenizer() {
   RUN_TEST(test_tokenizer_tokenize_empty_string);
   RUN_TEST(test_tokenizer_element_access_ls_al);
   RUN_TEST(test_tokenizer_element_access_out_of_bounds);
+  RUN_TEST(test_tokenizer_tokens_vector);
 }

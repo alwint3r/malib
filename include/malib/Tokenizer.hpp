@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <expected>
 #include <string_view>
+#include <vector>
 
 #include "malib/Error.hpp"
 #include "malib/Token.hpp"
@@ -64,6 +65,14 @@ class Tokenizer {
       return std::unexpected(Error::IndexOutOfRange);
     }
     return markers_[idx];
+  }
+
+  std::vector<Token> tokens_vector() const noexcept {
+    std::vector<Token> tokens;
+    for (std::size_t i = 0; i < count_; i++) {
+      tokens.push_back(markers_[i]);
+    }
+    return tokens;
   }
 
  private:

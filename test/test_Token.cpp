@@ -1,7 +1,7 @@
 #include <unity.h>
 
-#include <malib/Token.hpp>
 #include <malib/Error.hpp>
+#include <malib/Token.hpp>
 
 void test_token_view_nullptr() {
   malib::Token tok1{nullptr, 0, 0};

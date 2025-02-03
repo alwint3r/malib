@@ -1,7 +1,6 @@
 #include "malib/Token.hpp"
 
-std::expected<std::string_view, malib::Error> malib::Token::view()
-    const {
+std::expected<std::string_view, malib::Error> malib::Token::view() const {
   if (ptr == nullptr) {
     return std::unexpected(Error::NullPointerMember);
   }
