@@ -5,6 +5,7 @@ extern void test_Token();
 extern void test_Tokenizer();
 extern void test_RingBuffer();
 extern void test_BufferReader();
+extern void test_Shell();
 
 void setUp() {}
 
@@ -18,6 +19,7 @@ int main() {
   test_Tokenizer();
   test_RingBuffer();
   test_BufferReader();
+  test_Shell();
 
   return UNITY_END();
 }

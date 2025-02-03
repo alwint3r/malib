@@ -5,8 +5,8 @@
 #include <expected>
 #include <string_view>
 
-#include "malib/Token.hpp"
 #include "malib/Error.hpp"
+#include "malib/Token.hpp"
 
 namespace malib {
 template <std::size_t MaxTokens>

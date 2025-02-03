@@ -13,5 +13,7 @@ enum class Error : std::uint32_t {
   InvalidSize,
   IndexOutOfRange,
   MaximumSizeExceeded,
+  EmptyInput,
+  InvalidCommand,
 };
 };

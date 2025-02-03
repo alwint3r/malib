@@ -64,6 +64,7 @@ pub fn build(b: *std.Build) void {
             "test_Tokenizer.cpp",
             "test_RingBuffer.cpp",
             "test_BufferReader.cpp",
+            "test_Shell.cpp",
         },
         .flags = &[_][]const u8{
             "-std=c++23",
