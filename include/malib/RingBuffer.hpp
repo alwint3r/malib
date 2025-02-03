@@ -81,7 +81,7 @@ class RingBuffer {
   size_t head_{0};
   size_t tail_{0};
   size_t count_{0};
-  std::array<T, Capacity> buffer_;
-  mutable std::mutex mutex_;
+  std::array<T, Capacity> buffer_{};
+  mutable std::mutex mutex_{};
 };
 }  // namespace malib

@@ -69,6 +69,7 @@ class Tokenizer {
 
   std::vector<Token> tokens_vector() const noexcept {
     std::vector<Token> tokens;
+    tokens.reserve(count_);
     for (std::size_t i = 0; i < count_; i++) {
       tokens.push_back(markers_[i]);
     }

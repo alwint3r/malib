@@ -43,22 +43,13 @@ struct tiny {
     }
 
     auto tokens_count = tokenizer_result.value();
-
-    arguments args{};
-    args.reserve(tokens_count);
-
     auto command = std::string(tokenizer_[0].value().view().value());
     if (isCommandValid(command) == false) {
       return Error::InvalidCommand;
     }
 
-    for (std::size_t i = 1; i < tokens_count; i++) {
-      auto token = tokenizer_[i];
-      if (token.has_value() == false) {
-        return token.error();
-      }
-      args.push_back(token.value());
-    }
+    arguments args = tokenizer_.tokens_vector();
+    args.erase(args.begin());
 
     auto command_cb = registry_[command];
     if (command_cb == nullptr) {
