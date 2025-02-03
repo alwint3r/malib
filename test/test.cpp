@@ -7,6 +7,7 @@ extern void test_RingBuffer();
 extern void test_BufferReader();
 extern void test_Shell();
 extern void test_WaitableQueue();
+extern void test_TokenReader();
 
 void setUp() {}
 
@@ -22,6 +23,7 @@ int main() {
   test_BufferReader();
   test_Shell();
   test_WaitableQueue();
+  test_TokenReader();
 
   return UNITY_END();
 }

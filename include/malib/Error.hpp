@@ -15,5 +15,7 @@ enum class Error : std::uint32_t {
   MaximumSizeExceeded,
   EmptyInput,
   InvalidCommand,
+  InvalidArgument,
+  ResultOutOfRange,
 };
 };
