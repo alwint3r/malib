@@ -64,7 +64,8 @@ void test_nullCallback() {
   stub_output output{};
   auto result = shell.execute("nullcmd", output);
   TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result);
-  TEST_ASSERT_EQUAL_STRING("Command has no executable code\n", output.output.c_str());
+  TEST_ASSERT_EQUAL_STRING("Command has no executable code\n",
+                           output.output.c_str());
 }
 
 void test_Shell() {
