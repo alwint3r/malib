@@ -67,6 +67,7 @@ pub fn build(b: *std.Build) void {
             "test_Shell.cpp",
             "test_WaitableQueue.cpp",
             "test_TokenReader.cpp",
+            "test_ObservableData.cpp",
         },
 
         .flags = &[_][]const u8{
