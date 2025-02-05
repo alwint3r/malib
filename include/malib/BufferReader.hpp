@@ -5,22 +5,9 @@
 
 #include "malib/Error.hpp"
 #include "malib/RingBuffer.hpp"
+#include "malib/concepts.hpp"
 
 namespace malib {
-template <typename B>
-concept buffer_like = requires(B t) {
-  typename B::ValueType;
-  { t.push(std::declval<typename B::ValueType>()) } -> std::same_as<Error>;
-  { t.pop() } -> std::same_as<std::expected<typename B::ValueType, Error>>;
-  { t.peek() } -> std::same_as<std::expected<typename B::ValueType, Error>>;
-  { t.size() } -> std::same_as<size_t>;
-  { t.empty() } -> std::same_as<bool>;
-  { t.clear() } -> std::same_as<void>;
-  { std::tuple_size_v<B> } -> std::convertible_to<std::size_t>;
-};
-
-static_assert(buffer_like<RingBuffer<int, 0>>);
-
 template <buffer_like B>
 struct BufferReader {
   using ValueType = typename B::ValueType;

@@ -8,14 +8,10 @@
 
 #include "malib/Token.hpp"
 #include "malib/Tokenizer.hpp"
+#include "malib/concepts.hpp"
 
 namespace malib {
 namespace shell {
-
-template <typename T>
-concept output_interface = requires(T t) {
-  { t.write("Hello", 5) } -> std::same_as<std::expected<std::size_t, Error>>;
-};
 
 using arguments = std::vector<Token>;
 using callback = std::function<std::string(std::string, arguments)>;

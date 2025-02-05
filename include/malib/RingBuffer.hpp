@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "malib/Error.hpp"
+#include "malib/concepts.hpp"
 
 namespace malib {
 template <std::copyable T, size_t Capacity>
@@ -84,4 +85,7 @@ class RingBuffer {
   std::array<T, Capacity> buffer_{};
   mutable std::mutex mutex_{};
 };
+
+static_assert(std::is_same_v<RingBuffer<int, 10>::ValueType, int>);
+static_assert(buffer_like<RingBuffer<int, 10>>);
 }  // namespace malib

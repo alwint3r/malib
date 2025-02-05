@@ -3,7 +3,7 @@
 #include <array>
 
 #include "malib/Error.hpp"
-#include "malib/StringConcepts.hpp"
+#include "malib/concepts.hpp"
 
 namespace malib {
 template <std::size_t MaxSize>
@@ -12,7 +12,7 @@ struct FixedStringBuffer {
   using iterator = decltype(std::declval<container_type>().begin());
   using const_iterator = decltype(std::declval<container_type>().cbegin());
 
-  [[nodiscard]] Error copy(StringLike auto value) {
+  Error copy(string_like auto value) {
     if constexpr (std::is_same_v<std::remove_cv_t<
                                      std::remove_reference_t<decltype(value)>>,
                                  std::string>) {
@@ -21,7 +21,8 @@ struct FixedStringBuffer {
       return copy(value.data(), value.size());
     }
   }
-  [[nodiscard]] Error copy(CStyleString auto value, std::size_t size) {
+
+  Error copy(cstyle_string auto value, std::size_t size) {
     if (value == nullptr) {
       return Error::NullPointerInput;
     }

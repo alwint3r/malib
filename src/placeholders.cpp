@@ -13,4 +13,4 @@ struct test_output {
   }
 };
 
-static_assert(malib::shell::output_interface<test_output>);
+static_assert(malib::output_interface<test_output>);
