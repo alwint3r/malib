@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace malib {
-enum class Error : std::uint32_t {
+enum class Error : std::int32_t {
   Ok = 0,
   NullPointerMember,
   NullPointerInput,

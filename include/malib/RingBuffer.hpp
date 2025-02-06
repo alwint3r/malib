@@ -14,7 +14,7 @@ namespace malib {
 template <std::copyable T, size_t Capacity>
 class RingBuffer {
  public:
-  using ValueType = T;
+  using value_type = T;
 
   RingBuffer() = default;
   ~RingBuffer() = default;
@@ -86,6 +86,6 @@ class RingBuffer {
   mutable std::mutex mutex_{};
 };
 
-static_assert(std::is_same_v<RingBuffer<int, 10>::ValueType, int>);
+static_assert(std::same_as<RingBuffer<int, 10>::value_type, int>);
 static_assert(buffer_like<RingBuffer<int, 10>>);
 }  // namespace malib

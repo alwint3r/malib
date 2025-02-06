@@ -10,7 +10,7 @@
 namespace malib {
 template <buffer_like B>
 struct BufferReader {
-  using ValueType = typename B::ValueType;
+  using ValueType = typename B::value_type;
 
   static std::expected<std::size_t, Error> readAll(B& buffer,
                                                    ValueType* elements,
