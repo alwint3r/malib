@@ -15,7 +15,7 @@ struct stub_output {
 
 void test_addCommand() {
   malib::shell::tiny shell{};
-  shell.registerCommand("test", [](const std::string& command,
+  shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
     output.reset();
     return output.write("test", 4).error_or(malib::Error::Ok);
@@ -24,7 +24,7 @@ void test_addCommand() {
   TEST_ASSERT_TRUE(shell.isCommandValid("test"));
 
   // Test command overwrite
-  shell.registerCommand("test", [](const std::string& command,
+  shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
     output.reset();
     return output.write("test2", 5).error_or(malib::Error::Ok);
@@ -38,7 +38,7 @@ void test_addCommand() {
 
 void test_execute() {
   malib::shell::tiny shell{};
-  shell.registerCommand("echo", [](const std::string& command,
+  shell.registerCommand("echo", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
     output.reset();
     std::string result{};
@@ -94,10 +94,11 @@ void test_malformedInput() {
 
 void test_emptyArguments() {
   malib::shell::tiny shell{};
-  shell.registerCommand("test", [](const std::string& command,
+  shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
     output.reset();
-    return output.write(std::to_string(args.size()).c_str(), 1)
+    std::string result = std::to_string(args.size());
+    return output.write(result.c_str(), result.size())
         .error_or(malib::Error::Ok);
   });
 
@@ -110,8 +111,8 @@ void test_emptyArguments() {
 void test_bufferOverflow() {
   malib::shell::tiny<malib::FixedStringBuffer<5>> shell{};
   shell.registerCommand(
-      "overflow", [](const std::string& command, malib::shell::arguments args,
-                     auto& output) {
+      "overflow",
+      [](std::string_view command, malib::shell::arguments args, auto& output) {
         output.reset();
         TEST_ASSERT_EQUAL(5, output.capacity());
         TEST_ASSERT_EQUAL(0, output.size());
@@ -131,12 +132,14 @@ void test_bufferOverflow() {
 void test_threadSafety() {
   malib::shell::tiny shell{};
   shell.registerCommand(
-      "count", [](const std::string& command, malib::shell::arguments args,
-                  auto& output) {
+      "count",
+      [](std::string_view command, malib::shell::arguments args, auto& output) {
         output.reset();
         static int counter = 0;
         counter++;
-        return output.write(std::to_string(counter).c_str(), 1)
+
+        std::string output_str = std::to_string(counter);
+        return output.write(output_str.c_str(), output_str.size())
             .error_or(malib::Error::Ok);
       });
 

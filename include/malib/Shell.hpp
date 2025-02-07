@@ -19,13 +19,13 @@ using arguments = std::vector<std::string_view>;
 template <byte_output_interface OutputBufferType = FixedStringBuffer<256>>
 struct tiny {
   using callback =
-      std::function<Error(std::string, arguments, OutputBufferType&)>;
-  using registry = std::map<std::string, callback>;
-  void registerCommand(const std::string& name, callback cb) {
+      std::function<Error(std::string_view, arguments, OutputBufferType&)>;
+  using registry = std::map<std::string_view, callback>;
+  void registerCommand(std::string_view name, callback cb) {
     registry_[name] = cb;
   }
 
-  bool isCommandValid(const std::string& name) const {
+  bool isCommandValid(std::string_view name) const {
     return registry_.find(name) != registry_.end();
   }
 
@@ -41,7 +41,7 @@ struct tiny {
       return tokenizer_result.error();
     }
 
-    auto command = std::string(tokenizer_[0]->view(input));
+    auto command = tokenizer_[0]->view(input);
     if (isCommandValid(command) == false) {
       std::string_view error_message = "Invalid command\n";
       output.write(error_message.data(), error_message.size());
