@@ -94,22 +94,6 @@ void test_tokenizer_element_access_out_of_bounds() {
   TEST_ASSERT_EQUAL(malib::Error::IndexOutOfRange, token.error());
 }
 
-void test_tokenizer_tokens_vector() {
-  using SmallTokenizer = malib::Tokenizer<10>;
-  SmallTokenizer tokenizer{};
-  std::string_view input = "ls -al -h";
-  auto result = tokenizer.tokenize(input);
-  TEST_ASSERT_TRUE(result.has_value());
-  TEST_ASSERT_EQUAL_INT(3, result.value());
-
-  auto tokens = tokenizer.tokens_vector(input);
-  TEST_ASSERT_EQUAL_INT(3, tokens.size());
-
-  TEST_ASSERT_EQUAL_STRING_LEN("ls", tokens[0].data(), tokens[0].size());
-  TEST_ASSERT_EQUAL_STRING_LEN("-al", tokens[1].data(), tokens[1].size());
-  TEST_ASSERT_EQUAL_STRING_LEN("-h", tokens[2].data(), tokens[2].size());
-}
-
 void test_Tokenizer() {
   RUN_TEST(test_tokenizer_tokenize_ls_al);
   RUN_TEST(test_tokenizer_tokenize_ls_al_h);
@@ -120,5 +104,4 @@ void test_Tokenizer() {
   RUN_TEST(test_tokenizer_tokenize_empty_string);
   RUN_TEST(test_tokenizer_element_access_ls_al);
   RUN_TEST(test_tokenizer_element_access_out_of_bounds);
-  RUN_TEST(test_tokenizer_tokens_vector);
 }

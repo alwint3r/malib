@@ -48,16 +48,14 @@ struct tiny {
       return tokenizer_result.error();
     }
 
-    auto command = tokenizer_[0]->view(input);
+    auto command = tokenizer_.tokens_span()[0].view(input);
     if (!isCommandValid(command)) {
       output.write(invalid_command_message.data(),
                    invalid_command_message.size());
       return Error::InvalidCommand;
     }
 
-    auto all_tokens = tokenizer_.tokens_span();
-    arguments args{input, all_tokens.subspan(1)};
-
+    arguments args{input, tokenizer_.tokens_span().subspan(1)};
     auto command_cb = registry_[command];
     if (command_cb == nullptr) {
       output.write(no_command_message.data(), no_command_message.size());
