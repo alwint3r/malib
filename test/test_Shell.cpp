@@ -26,19 +26,18 @@ void test_addCommand() {
 
 void test_execute() {
   malib::shell::tiny shell{};
-  shell.registerCommand(
-      "echo", [](const std::string& command, malib::shell::arguments args,
-                 malib::shell::output_buffer& output) {
-        output.reset();
-        std::string result{};
+  shell.registerCommand("echo", [](const std::string& command,
+                                   malib::shell::arguments args, auto& output) {
+    output.reset();
+    std::string result{};
 
-        for (const auto& arg : args) {
-          result += arg.view().value();
-          result += " ";
-        }
+    for (const auto& arg : args) {
+      result += arg.view().value();
+      result += " ";
+    }
 
-        output.write(result.c_str(), result.size());
-      });
+    output.write(result.c_str(), result.size());
+  });
 
   stub_output output{};
   auto result = shell.execute("echo Hello World", output);

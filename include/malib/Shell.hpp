@@ -6,21 +6,21 @@
 #include <string>
 #include <vector>
 
+#include "malib/FixedStringBuffer.hpp"
 #include "malib/Token.hpp"
 #include "malib/Tokenizer.hpp"
 #include "malib/concepts.hpp"
-#include "malib/FixedStringBuffer.hpp"
 
 namespace malib {
 namespace shell {
 
 using arguments = std::vector<Token>;
-using output_buffer = FixedStringBuffer<256>;
-using callback =
-    std::function<void(std::string, arguments, output_buffer&)>;
-using registry = std::map<std::string, callback>;
 
+template <byte_output OutputBufferType = FixedStringBuffer<256>>
 struct tiny {
+  using callback =
+      std::function<void(std::string, arguments, OutputBufferType&)>;
+  using registry = std::map<std::string, callback>;
   void registerCommand(const std::string& name, callback cb) {
     registry_[name] = cb;
   }
@@ -65,7 +65,7 @@ struct tiny {
 
  private:
   registry registry_{};
-  output_buffer output_buffer_{};
+  OutputBufferType output_buffer_{};
   Tokenizer<32> tokenizer_{};
   std::mutex mutex_{};
 };
