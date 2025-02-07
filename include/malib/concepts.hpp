@@ -66,7 +66,7 @@ concept input_interface = requires(T t, char *buffer, std::size_t size) {
 };
 
 template <typename T>
-concept byte_output = requires(T t) {
+concept byte_output_interface = requires(T t) {
   {
     t.write(std::declval<const char *>(), std::declval<std::size_t>())
   } -> std_expected_any_error<std::size_t>;

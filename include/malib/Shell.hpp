@@ -16,10 +16,10 @@ namespace shell {
 
 using arguments = std::vector<Token>;
 
-template <byte_output OutputBufferType = FixedStringBuffer<256>>
+template <byte_output_interface OutputBufferType = FixedStringBuffer<256>>
 struct tiny {
   using callback =
-      std::function<void(std::string, arguments, OutputBufferType&)>;
+      std::function<Error(std::string, arguments, OutputBufferType&)>;
   using registry = std::map<std::string, callback>;
   void registerCommand(const std::string& name, callback cb) {
     registry_[name] = cb;
@@ -57,7 +57,12 @@ struct tiny {
       output.write(error_message.data(), error_message.size());
       return Error::NullPointerMember;
     }
-    command_cb(command, args, output_buffer_);
+
+    auto command_result = command_cb(command, args, output_buffer_);
+    if (command_result != Error::Ok) {
+      return command_result;
+    }
+
     auto output_result =
         output.write(output_buffer_.data(), output_buffer_.size());
     return output_result.has_value() ? Error::Ok : output_result.error();
