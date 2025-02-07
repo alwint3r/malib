@@ -14,9 +14,11 @@ struct stub_output {
 
 void test_addCommand() {
   malib::shell::tiny shell{};
-  shell.registerCommand(
-      "echo",
-      [](std::string command, malib::shell::arguments args) { return "echo"; });
+  shell.registerCommand("echo", [](const std::string& command,
+                                   malib::shell::arguments args, auto& output) {
+    output.reset();
+    output.write("Hello World", 11);
+  });
 
   TEST_ASSERT_TRUE(shell.isCommandValid("echo"));
   TEST_ASSERT_FALSE(shell.isCommandValid("invalid"));
@@ -24,16 +26,19 @@ void test_addCommand() {
 
 void test_execute() {
   malib::shell::tiny shell{};
-  shell.registerCommand("echo",
-                        [](std::string command, malib::shell::arguments args) {
-                          std::string result = "";
+  shell.registerCommand(
+      "echo", [](const std::string& command, malib::shell::arguments args,
+                 malib::shell::output_buffer& output) {
+        output.reset();
+        std::string result{};
 
-                          for (const auto& arg : args) {
-                            result += arg.view().value();
-                            result += " ";
-                          }
-                          return result;
-                        });
+        for (const auto& arg : args) {
+          result += arg.view().value();
+          result += " ";
+        }
+
+        output.write(result.c_str(), result.size());
+      });
 
   stub_output output{};
   auto result = shell.execute("echo Hello World", output);

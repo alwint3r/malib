@@ -76,5 +76,4 @@ concept byte_output = requires(T t) {
   } -> std::convertible_to<std::size_t>;
 };
 
-
 }  // namespace malib

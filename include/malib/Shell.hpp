@@ -9,12 +9,15 @@
 #include "malib/Token.hpp"
 #include "malib/Tokenizer.hpp"
 #include "malib/concepts.hpp"
+#include "malib/FixedStringBuffer.hpp"
 
 namespace malib {
 namespace shell {
 
 using arguments = std::vector<Token>;
-using callback = std::function<std::string(std::string, arguments)>;
+using output_buffer = FixedStringBuffer<256>;
+using callback =
+    std::function<void(std::string, arguments, output_buffer&)>;
 using registry = std::map<std::string, callback>;
 
 struct tiny {
@@ -54,13 +57,15 @@ struct tiny {
       output.write(error_message.data(), error_message.size());
       return Error::NullPointerMember;
     }
-    auto result = command_cb(command, args);
-    auto output_result = output.write(result.c_str(), result.size());
+    command_cb(command, args, output_buffer_);
+    auto output_result =
+        output.write(output_buffer_.data(), output_buffer_.size());
     return output_result.has_value() ? Error::Ok : output_result.error();
   }
 
  private:
   registry registry_{};
+  output_buffer output_buffer_{};
   Tokenizer<32> tokenizer_{};
   std::mutex mutex_{};
 };

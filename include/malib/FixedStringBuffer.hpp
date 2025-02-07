@@ -45,6 +45,8 @@ struct FixedStringBuffer {
     buf_ = {0};
   }
 
+  void clear() { reset(); }
+
   [[nodiscard]] iterator begin() noexcept { return buf_.begin(); }
   [[nodiscard]] iterator end() noexcept { return buf_.begin() + size_; }
 
