@@ -141,6 +141,35 @@ void test_fixed_string_buffer_format() {
     TEST_ASSERT_LESS_OR_EQUAL(buffer.capacity(), result.out - buffer.begin());
 }
 
+void test_fixed_string_buffer_write() {
+    using SmallBuffer = malib::FixedStringBuffer<10>;
+    SmallBuffer buffer{};
+
+    // Write some data
+    auto result1 = buffer.write("test", 4);
+    TEST_ASSERT_TRUE(result1.has_value());
+    TEST_ASSERT_EQUAL(4, result1.value());
+    TEST_ASSERT_EQUAL_STRING_LEN("test", buffer.view().data(), 4);
+
+    // Write more data until full
+    auto result2 = buffer.write("123456", 6);
+    TEST_ASSERT_TRUE(result2.has_value());
+    TEST_ASSERT_EQUAL(6, result2.value());
+    TEST_ASSERT_EQUAL_STRING_LEN("test123456", buffer.view().data(), 10);
+    TEST_ASSERT_TRUE(buffer.full());
+
+    // Attempt to write beyond capacity
+    auto result3 = buffer.write("7", 1);
+    TEST_ASSERT_FALSE(result3.has_value());
+    TEST_ASSERT_EQUAL(malib::Error::MaximumSizeExceeded, result3.error());
+
+    // Null pointer input
+    const char* null_ptr = nullptr;
+    auto result4 = buffer.write(null_ptr, 1);
+    TEST_ASSERT_FALSE(result4.has_value());
+    TEST_ASSERT_EQUAL(malib::Error::NullPointerInput, result4.error());
+}
+
 void test_FixedStringBuffer() {
   RUN_TEST(test_fixed_string_buffer_copy);
   RUN_TEST(test_fixed_string_buffer_reset);
@@ -152,4 +181,5 @@ void test_FixedStringBuffer() {
   RUN_TEST(test_fixed_string_buffer_array_access);
   RUN_TEST(test_fixed_string_buffer_state);
   RUN_TEST(test_fixed_string_buffer_format);
+  RUN_TEST(test_fixed_string_buffer_write);
 }

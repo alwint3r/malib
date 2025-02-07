@@ -80,6 +80,20 @@ struct FixedStringBuffer {
     return view() != other.view();
   }
 
+  std::expected<std::size_t, Error> write(const char* data, std::size_t size) {
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+
+    if (size + size_ > MaxSize) {
+      return std::unexpected(Error::MaximumSizeExceeded);
+    }
+
+    std::memcpy(buf_.data() + size_, data, size);
+    size_ += size;
+    return size;
+  }
+
  private:
   std::array<char, MaxSize> buf_{0};
   std::size_t size_{0};

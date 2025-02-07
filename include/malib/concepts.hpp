@@ -3,8 +3,8 @@
 #include <concepts>
 #include <expected>
 #include <string>
-#include <type_traits>
 #include <system_error>
+#include <type_traits>
 
 namespace malib {
 
@@ -32,6 +32,12 @@ static_assert(cstyle_string<const char *>);
 static_assert(cstyle_string<char *>);
 static_assert(cstyle_string<void *> == false);
 
+template <typename Type, typename RetType>
+concept std_expected_any_error = requires {
+  typename std::remove_cvref_t<Type>::value_type;
+  typename std::remove_cvref_t<Type>::error_type;
+} && std::same_as<typename std::remove_cvref_t<Type>::value_type, RetType>;
+
 // buffers
 template <typename B>
 concept buffer_like = requires(B t) {
@@ -58,5 +64,17 @@ concept input_interface = requires(T t, char *buffer, std::size_t size) {
 } || requires(T t, char *buffer, std::size_t size) {
   { t.read(buffer, size) } -> std::same_as<std::size_t>;
 };
+
+template <typename T>
+concept byte_output = requires(T t) {
+  {
+    t.write(std::declval<const char *>(), std::declval<std::size_t>())
+  } -> std_expected_any_error<std::size_t>;
+} || requires(T t) {
+  {
+    t.write(std::declval<const char *>(), std::declval<std::size_t>())
+  } -> std::convertible_to<std::size_t>;
+};
+
 
 }  // namespace malib
