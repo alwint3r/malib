@@ -62,22 +62,23 @@ void test_tokenizer_tokenize_empty_string() {
 void test_tokenizer_element_access_ls_al() {
   using SmallTokenizer = malib::Tokenizer<10>;
   SmallTokenizer tokenizer{};
-  auto result = tokenizer.tokenize("ls -al");
+  std::string_view input = "ls -al";
+  auto result = tokenizer.tokenize(input);
   TEST_ASSERT_TRUE(result.has_value());
   TEST_ASSERT_EQUAL_INT(2, result.value());
 
   auto token = tokenizer[0];
   TEST_ASSERT_TRUE(token.has_value());
-  TEST_ASSERT_EQUAL(token.value().start, 0);
-  TEST_ASSERT_EQUAL(token.value().end, 1);
-  auto view = token.value().view().value();
+  TEST_ASSERT_EQUAL(token.value().offset, 0);
+  TEST_ASSERT_EQUAL(token.value().length, 2);
+  auto view = token.value().view(input);
   TEST_ASSERT_EQUAL_STRING_LEN("ls", view.data(), view.size());
 
   token = tokenizer[1];
-  TEST_ASSERT_EQUAL(token.value().start, 3);
-  TEST_ASSERT_EQUAL(token.value().end, 5);
   TEST_ASSERT_TRUE(token.has_value());
-  view = token.value().view().value();
+  TEST_ASSERT_EQUAL(token.value().offset, 3);
+  TEST_ASSERT_EQUAL(token.value().length, 3);
+  view = token.value().view(input);
   TEST_ASSERT_EQUAL_STRING_LEN("-al", view.data(), view.size());
 }
 
@@ -96,27 +97,17 @@ void test_tokenizer_element_access_out_of_bounds() {
 void test_tokenizer_tokens_vector() {
   using SmallTokenizer = malib::Tokenizer<10>;
   SmallTokenizer tokenizer{};
-  auto result = tokenizer.tokenize("ls -al -h");
+  std::string_view input = "ls -al -h";
+  auto result = tokenizer.tokenize(input);
   TEST_ASSERT_TRUE(result.has_value());
   TEST_ASSERT_EQUAL_INT(3, result.value());
 
-  auto tokens = tokenizer.tokens_vector();
+  auto tokens = tokenizer.tokens_vector(input);
   TEST_ASSERT_EQUAL_INT(3, tokens.size());
 
-  TEST_ASSERT_EQUAL(tokens[0].start, 0);
-  TEST_ASSERT_EQUAL(tokens[0].end, 1);
-  auto view = tokens[0].view().value();
-  TEST_ASSERT_EQUAL_STRING_LEN("ls", view.data(), view.size());
-
-  TEST_ASSERT_EQUAL(tokens[1].start, 3);
-  TEST_ASSERT_EQUAL(tokens[1].end, 5);
-  view = tokens[1].view().value();
-  TEST_ASSERT_EQUAL_STRING_LEN("-al", view.data(), view.size());
-
-  TEST_ASSERT_EQUAL(tokens[2].start, 7);
-  TEST_ASSERT_EQUAL(tokens[2].end, 8);
-  view = tokens[2].view().value();
-  TEST_ASSERT_EQUAL_STRING_LEN("-h", view.data(), view.size());
+  TEST_ASSERT_EQUAL_STRING_LEN("ls", tokens[0].data(), tokens[0].size());
+  TEST_ASSERT_EQUAL_STRING_LEN("-al", tokens[1].data(), tokens[1].size());
+  TEST_ASSERT_EQUAL_STRING_LEN("-h", tokens[2].data(), tokens[2].size());
 }
 
 void test_Tokenizer() {

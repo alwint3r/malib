@@ -11,11 +11,11 @@
 
 namespace malib {
 struct TokenReader {
-  static Error to_number(const Token& token, std::integral auto& value,
-                         int base = 10) {
-    auto token_sv = token.view().value();
+  static Error to_number(const Token& token, std::string_view base, std::integral auto& value,
+                         int radix = 10) {
+    auto token_sv = token.view(base);
     auto [ptr, ec] = std::from_chars(
-        token_sv.data(), token_sv.data() + token_sv.size(), value, base);
+        token_sv.data(), token_sv.data() + token_sv.size(), value, radix);
 
     if (ec == std::errc::invalid_argument) {
       return Error::InvalidArgument;
@@ -26,8 +26,8 @@ struct TokenReader {
     return Error::Ok;
   }
 
-  static Error to_number(const Token& token, std::floating_point auto& value) {
-    auto token_sv = token.view().value();
+  static Error to_number(const Token& token, std::string_view base, std::floating_point auto& value) {
+    auto token_sv = token.view(base);
     std::string token_str{token_sv.data(), token_sv.size()};
     char* end = nullptr;
 

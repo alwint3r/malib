@@ -44,7 +44,7 @@ void test_execute() {
     std::string result{};
 
     for (const auto& arg : args) {
-      result += arg.view().value();
+      result += arg;
       result += " ";
     }
 

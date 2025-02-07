@@ -32,8 +32,7 @@ class Tokenizer {
       }
 
       scanning = true;
-      markers_[count_].start = pos;
-      markers_[count_].ptr = buf;
+      markers_[count_].offset = pos;
 
       while (pos < size) {
         char c = buf[pos];
@@ -42,7 +41,7 @@ class Tokenizer {
         }
 
         if (std::isspace(c) && !quoted) {
-          markers_[count_].end = pos - 1;
+          markers_[count_].length = pos - markers_[count_].offset;
           scanning = false;
           count_++;
           pos++;
@@ -53,7 +52,7 @@ class Tokenizer {
     }
 
     if (scanning) {
-      markers_[count_].end = pos - 1;
+      markers_[count_].length = pos - markers_[count_].offset;
       count_++;
     }
 
@@ -67,11 +66,11 @@ class Tokenizer {
     return markers_[idx];
   }
 
-  std::vector<Token> tokens_vector() const noexcept {
-    std::vector<Token> tokens;
+  std::vector<std::string_view> tokens_vector(std::string_view input) const noexcept {
+    std::vector<std::string_view> tokens;
     tokens.reserve(count_);
     for (std::size_t i = 0; i < count_; i++) {
-      tokens.push_back(markers_[i]);
+      tokens.push_back(markers_[i].view(input));
     }
     return tokens;
   }

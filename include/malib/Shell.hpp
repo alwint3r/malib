@@ -14,7 +14,7 @@
 namespace malib {
 namespace shell {
 
-using arguments = std::vector<Token>;
+using arguments = std::vector<std::string_view>;
 
 template <byte_output_interface OutputBufferType = FixedStringBuffer<256>>
 struct tiny {
@@ -41,14 +41,14 @@ struct tiny {
       return tokenizer_result.error();
     }
 
-    auto command = std::string(tokenizer_[0].value().view().value());
+    auto command = std::string(tokenizer_[0]->view(input));
     if (isCommandValid(command) == false) {
       std::string_view error_message = "Invalid command\n";
       output.write(error_message.data(), error_message.size());
       return Error::InvalidCommand;
     }
 
-    arguments args = tokenizer_.tokens_vector();
+    arguments args = tokenizer_.tokens_vector(input);
     args.erase(args.begin());
 
     auto command_cb = registry_[command];
