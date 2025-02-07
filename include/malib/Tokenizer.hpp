@@ -66,13 +66,22 @@ class Tokenizer {
     return markers_[idx];
   }
 
-  std::vector<std::string_view> tokens_vector(std::string_view input) const noexcept {
+  std::vector<std::string_view> tokens_vector(
+      std::string_view input) const noexcept {
     std::vector<std::string_view> tokens;
     tokens.reserve(count_);
     for (std::size_t i = 0; i < count_; i++) {
       tokens.push_back(markers_[i].view(input));
     }
     return tokens;
+  }
+
+  std::span<const Token> tokens_span() const noexcept {
+    return std::span<const Token>(markers_.data(), count_);
+  }
+
+  auto tokens_views(std::string_view input) const noexcept {
+    return TokenViews{input, tokens_span()};
   }
 
  private:
