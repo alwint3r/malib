@@ -46,26 +46,32 @@ static_assert(sizeof(Token) == 4, "Token should be 4 bytes");
 
 /**
  * @struct TokenViews
- * @brief A view container that provides access to a sequence of tokens within a base string.
+ * @brief A view container that provides access to a sequence of tokens within a
+ * base string.
  *
- * TokenViews provides a convenient way to iterate over and access token contents
- * from a base string. It holds a reference to the base string and a span of Token
- * objects, allowing efficient access to token substrings without copying data.
+ * @warning The base string and tokens span must outlive any TokenViews
+ * instances and their iterators that reference them.
+ * @warning All tokens must have valid offset and length values within the
+ * bounds of the base string.
+ *
+ * TokenViews provides a convenient way to iterate over and access token
+ * contents from a base string. It holds a reference to the base string and a
+ * span of Token objects, allowing efficient access to token substrings without
+ * copying data.
  */
 struct TokenViews {
-  std::string_view base;     ///< The base string containing the token contents
-  std::span<const Token> tokens;  ///< Span of tokens representing substrings within the base string
-
   /**
    * @struct TokenIterator
-   * @brief Iterator for traversing token contents within a TokenViews container.
+   * @brief Iterator for traversing token contents within a TokenViews
+   * container.
    *
    * Provides standard iterator interface for accessing token contents directly
    * as string_views, hiding the token offset/length implementation details.
    */
   struct TokenIterator {
-    std::string_view base;              ///< Reference to the base string
-    std::span<const Token>::iterator current;  ///< Current position in the token span
+    std::string_view base;  ///< Reference to the base string
+    std::span<const Token>::iterator
+        current;  ///< Current position in the token span
 
     std::string_view operator*() const noexcept { return current->view(base); }
 
@@ -116,8 +122,8 @@ struct TokenViews {
   /**
    * @brief Accesses a token's contents by index.
    * @param idx Index of the token to access.
-   * @return Expected containing the token's contents as string_view if idx is valid,
-   *         or Error::IndexOutOfRange if idx is out of bounds.
+   * @return Expected containing the token's contents as string_view if idx is
+   * valid, or Error::IndexOutOfRange if idx is out of bounds.
    */
   std::expected<std::string_view, Error> operator[](
       std::size_t idx) const noexcept {
@@ -126,5 +132,52 @@ struct TokenViews {
     }
     return tokens[idx].view(base);
   }
+
+  /**
+   * @brief Creates a TokenViews instance.
+   *
+   * @param base The base string being referenced.
+   * @param tokens A span of Token objects representing the tokens.
+   * @return std::expected<TokenViews, Error>
+   */
+  static std::expected<TokenViews, Error> create(
+      std::string_view base, std::span<const Token> tokens) noexcept {
+    uint32_t last_end = 0;
+    for (const Token& token : tokens) {
+      // Check if token is within bounds
+      if (token.offset + token.length > base.size()) {
+        return std::unexpected{Error::IndexOutOfRange};
+      }
+      // Check if tokens are ordered and non-overlapping
+      if (token.offset < last_end) {
+        return std::unexpected{Error::InvalidArgument};
+      }
+      last_end = token.offset + token.length;
+    }
+
+    return TokenViews{base, tokens};
+  }
+
+  /**
+   * @brief Accesses a token's contents safely by index.
+   * @param idx Index of the token to access.
+   * @return Expected containing the token's contents as string_view if idx is
+   * valid, or Error::IndexOutOfRange if idx is out of bounds.
+   */
+  std::expected<std::string_view, Error> safe_access(
+      std::size_t idx) const noexcept {
+    if (idx >= tokens.size()) {
+      return std::unexpected{Error::IndexOutOfRange};
+    }
+    return tokens[idx].view(base);
+  }
+
+ private:
+  TokenViews(std::string_view base, std::span<const Token> tokens)
+      : base(base), tokens(tokens) {}
+
+  std::string_view base;  ///< The base string containing the token contents
+  std::span<const Token> tokens;  ///< Span of tokens representing substrings
+                                  ///< within the base string
 };
 }  // namespace malib

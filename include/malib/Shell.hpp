@@ -55,7 +55,11 @@ struct tiny {
       return Error::InvalidCommand;
     }
 
-    arguments args{input, tokenizer_.tokens_span().subspan(1)};
+    auto args = TokenViews::create(input, tokenizer_.tokens_span().subspan(1));
+    if (!args.has_value()) {
+      return args.error();
+    }
+
     auto command_cb = registry_[command];
     if (command_cb == nullptr) {
       output.write(no_command_message.data(), no_command_message.size());
@@ -63,7 +67,7 @@ struct tiny {
     }
 
     output_buffer_.clear();
-    auto command_result = command_cb(command, args, output_buffer_);
+    auto command_result = command_cb(command, *args, output_buffer_);
     if (command_result != Error::Ok) {
       return command_result;
     }
