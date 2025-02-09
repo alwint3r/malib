@@ -1,7 +1,6 @@
 #pragma once
 
 #include <condition_variable>
-#include <expected>
 #include <mutex>
 #include <queue>
 
@@ -10,18 +9,15 @@
 namespace malib {
 template <typename T>
 struct WaitableQueue {
-  Error push(T task) {
+  void push(T task) {
     std::unique_lock<std::mutex> lock(mutex_);
     queue_.push(task);
     cv_.notify_one();
-    return Error::Ok;
   }
-
   bool empty() const {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     return queue_.empty();
   }
-
   T pop() {
     std::unique_lock<std::mutex> lock(mutex_);
     cv_.wait(lock, [this] { return !queue_.empty(); });
