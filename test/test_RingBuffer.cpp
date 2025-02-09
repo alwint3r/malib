@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <thread>
+#include <atomic>
 
 #include "malib/RingBuffer.hpp"
 
@@ -89,22 +90,38 @@ void test_different_types() {
 void test_concurrent_access() {
   using SmallRingBuffer = malib::RingBuffer<int, 100>;
   SmallRingBuffer buffer{};
-
+  
+  std::atomic<int> pushed_count{0};
+  std::atomic<int> popped_count{0};
+  std::atomic<bool> producer_done{false};
+  
   std::thread producer([&]() {
-    for (int i = 0; i < 50; i++) {
-      buffer.push(i);
-    }
+      for (int i = 0; i < 50; i++) {
+          while (buffer.push(i) == malib::Error::BufferFull) {
+              std::this_thread::yield();
+          }
+          pushed_count++;
+      }
+      producer_done = true;
   });
 
   std::thread consumer([&]() {
-    for (int i = 0; i < 50; i++) {
-      auto result = buffer.pop();
-      TEST_ASSERT_TRUE(result.has_value());
-    }
+      while (!producer_done || !buffer.empty()) {
+          auto result = buffer.pop();
+          if (result.has_value()) {
+              popped_count++;
+          } else {
+              std::this_thread::yield();
+          }
+      }
   });
 
   producer.join();
   consumer.join();
+
+  // Meaningful assertions
+  TEST_ASSERT_EQUAL(50, pushed_count);
+  TEST_ASSERT_EQUAL(50, popped_count);
   TEST_ASSERT_TRUE(buffer.empty());
 }
 
