@@ -76,13 +76,18 @@ void test_emptyInput() {
 
 void test_nullCallback() {
   malib::shell::tiny shell{};
-  shell.registerCommand("nullcmd", nullptr);
+  
+  // Test registering null callback
+  auto result = shell.registerCommand("nullcmd", nullptr);
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result);
+
+  // Verify command was not registered
+  TEST_ASSERT_FALSE(shell.isCommandValid("nullcmd"));
 
   stub_output output{};
-  auto result = shell.execute("nullcmd", output);
-  TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result);
-  TEST_ASSERT_EQUAL_STRING("Command has no executable code\n",
-                           output.output.c_str());
+  result = shell.execute("nullcmd", output);
+  TEST_ASSERT_EQUAL(malib::Error::InvalidCommand, result);
+  TEST_ASSERT_EQUAL_STRING("Invalid command\n", output.output.c_str());
 }
 
 void test_malformedInput() {
@@ -154,6 +159,21 @@ void test_threadSafety() {
   TEST_ASSERT_NOT_EQUAL(output1.output, output2.output);
 }
 
+void test_emptyCommandName() {
+  malib::shell::tiny shell{};
+  
+  // Test registering empty command name
+  auto result = shell.registerCommand("", [](std::string_view command,
+                                           malib::shell::arguments args,
+                                           auto& output) {
+    return malib::Error::Ok;
+  });
+  TEST_ASSERT_EQUAL(malib::Error::EmptyInput, result);
+
+  // Verify command was not registered
+  TEST_ASSERT_FALSE(shell.isCommandValid(""));
+}
+
 void test_Shell() {
   RUN_TEST(test_addCommand);
   RUN_TEST(test_execute);
@@ -164,4 +184,5 @@ void test_Shell() {
   RUN_TEST(test_emptyArguments);
   RUN_TEST(test_bufferOverflow);
   RUN_TEST(test_threadSafety);
+  RUN_TEST(test_emptyCommandName);
 }

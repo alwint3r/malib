@@ -24,8 +24,18 @@ struct tiny {
       std::function<Error(std::string_view, arguments, OutputBufferType&)>;
   using registry = std::map<std::string_view, callback>;
 
-  void registerCommand(std::string_view name, callback cb) {
-    registry_[name] = cb;
+  Error registerCommand(std::string_view name, callback cb) {
+    if (name.empty()) {
+        return Error::EmptyInput;
+    }
+    
+    if (cb == nullptr) {
+        return Error::NullPointerMember;
+    }
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    registry_[name] = std::move(cb);
+    return Error::Ok;
   }
 
   bool isCommandValid(std::string_view name) const {
