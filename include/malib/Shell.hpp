@@ -42,7 +42,7 @@ struct tiny {
     return registry_.find(name) != registry_.end();
   }
 
-  Error execute(std::string_view input, output_interface auto& output) {
+  Error execute(std::string_view input, byte_output_interface auto& output) {
     std::lock_guard<std::mutex> lock(mutex_);
     static constexpr std::string_view invalid_command_message =
         "Invalid command\n";
