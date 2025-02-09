@@ -9,6 +9,7 @@ extern void test_Shell();
 extern void test_WaitableQueue();
 extern void test_TokenReader();
 extern void test_ObservableData();
+extern void test_FixedSizeWaitableQueue();
 
 void setUp() {}
 
@@ -26,6 +27,7 @@ int main() {
   test_WaitableQueue();
   test_TokenReader();
   test_ObservableData();
+  test_FixedSizeWaitableQueue();
 
   return UNITY_END();
 }

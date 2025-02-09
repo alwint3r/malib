@@ -17,5 +17,6 @@ enum class Error : std::int32_t {
   InvalidCommand,
   InvalidArgument,
   ResultOutOfRange,
+  QueueFull,
 };
 };
