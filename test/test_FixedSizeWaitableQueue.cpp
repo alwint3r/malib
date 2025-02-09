@@ -78,7 +78,36 @@ void test_FixedSizeWaitableQueue_threaded() {
   }
 }
 
+void test_FixedSizeWaitableQueue_pop_blocks_on_empty() {
+    malib::FixedSizeWaitableQueue<int, 2> queue;
+    bool thread_finished = false;
+    int received_value = 0;
+    
+    // Start thread that will block on pop
+    std::thread consumer([&]() {
+        received_value = queue.pop();
+        thread_finished = true;
+    });
+    
+    // Give thread time to reach blocking point
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    
+    // Verify thread is blocked
+    TEST_ASSERT_FALSE(thread_finished);
+    
+    // Unblock thread by pushing value
+    queue.push(42);
+    
+    // Wait for thread to finish
+    consumer.join();
+    
+    // Verify thread completed and got correct value
+    TEST_ASSERT_TRUE(thread_finished);
+    TEST_ASSERT_EQUAL(42, received_value);
+}
+
 void test_FixedSizeWaitableQueue() {
   RUN_TEST(test_FixedSizeWaitableQueue_with_callback_functions);
   RUN_TEST(test_FixedSizeWaitableQueue_threaded);
+  RUN_TEST(test_FixedSizeWaitableQueue_pop_blocks_on_empty);
 }
