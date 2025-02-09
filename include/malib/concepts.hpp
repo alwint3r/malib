@@ -50,16 +50,21 @@ concept buffer_like = requires(B t) {
   { t.clear() } -> std::same_as<void>;
 };
 
-// interfaces
 template <typename T>
-concept output_interface = requires(T t) {
-  {
-    t.write(std::declval<const char *>(), std::declval<std::size_t>())
-  } -> std::same_as<std::expected<std::size_t, Error>>;
+concept poppable_container = requires(T t) {
+  { t.pop() } -> std_expected_any_error<typename T::value_type>;
 };
 
+template <typename T>
+concept container_like = requires(T t) {
+  typename T::value_type;
+  { t.size() } -> std::same_as<std::size_t>;
+  { t.empty() } -> std::same_as<bool>;
+};
+
+// interfaces
 template <typename T, typename ErrType = Error>
-concept input_interface = requires(T t, char *buffer, std::size_t size) {
+concept byte_input_interface = requires(T t, char *buffer, std::size_t size) {
   { t.read(buffer, size) } -> std::same_as<std::expected<std::size_t, ErrType>>;
 } || requires(T t, char *buffer, std::size_t size) {
   { t.read(buffer, size) } -> std::same_as<std::size_t>;

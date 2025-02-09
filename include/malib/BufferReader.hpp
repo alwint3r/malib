@@ -8,13 +8,11 @@
 #include "malib/concepts.hpp"
 
 namespace malib {
-template <buffer_like B>
 struct BufferReader {
-  using ValueType = typename B::value_type;
-
-  static std::expected<std::size_t, Error> readAll(B& buffer,
-                                                   ValueType* elements,
-                                                   std::size_t maxSize) {
+  template <typename B>
+    requires(poppable_container<B> and container_like<B>)
+  static std::expected<std::size_t, Error> readAll(
+      B& buffer, typename B::value_type* elements, std::size_t maxSize) {
     if (elements == nullptr) {
       return std::unexpected(Error::NullPointerOutput);
     }
@@ -35,9 +33,11 @@ struct BufferReader {
     return count;
   }
 
-  static std::expected<std::size_t, Error> readUntil(B& buffer, ValueType value,
-                                                     ValueType* elements,
-                                                     std::size_t maxSize) {
+  template <typename B>
+    requires(poppable_container<B> and container_like<B>)
+  static std::expected<std::size_t, Error> readUntil(
+      B& buffer, typename B::value_type value, typename B::value_type* elements,
+      std::size_t maxSize) {
     if (elements == nullptr) {
       return std::unexpected{Error::NullPointerOutput};
     }
