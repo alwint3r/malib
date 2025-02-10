@@ -66,7 +66,7 @@ pub fn build(b: *std.Build) void {
             "test_BufferReader.cpp",
             "test_Shell.cpp",
             "test_WaitableQueue.cpp",
-            "test_TokenReader.cpp",
+            "test_StringConverter.cpp",
             "test_ObservableData.cpp",
             "test_FixedSizeWaitableQueue.cpp",
         },

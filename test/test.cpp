@@ -7,7 +7,7 @@ extern void test_RingBuffer();
 extern void test_BufferReader();
 extern void test_Shell();
 extern void test_WaitableQueue();
-extern void test_TokenReader();
+extern void test_StringConverter();
 extern void test_ObservableData();
 extern void test_FixedSizeWaitableQueue();
 
@@ -25,7 +25,7 @@ int main() {
   test_BufferReader();
   test_Shell();
   test_WaitableQueue();
-  test_TokenReader();
+  test_StringConverter();
   test_ObservableData();
   test_FixedSizeWaitableQueue();
 
