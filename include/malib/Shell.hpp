@@ -26,13 +26,13 @@ struct tiny {
 
   Error registerCommand(std::string_view name, callback cb) {
     if (name.empty()) {
-        return Error::EmptyInput;
+      return Error::EmptyInput;
     }
-    
+
     if (cb == nullptr) {
-        return Error::NullPointerMember;
+      return Error::NullPointerMember;
     }
-    
+
     std::lock_guard<std::mutex> lock(mutex_);
     registry_[name] = std::move(cb);
     return Error::Ok;
@@ -79,6 +79,7 @@ struct tiny {
     output_buffer_.clear();
     auto command_result = command_cb(command, *args, output_buffer_);
     if (command_result != Error::Ok) {
+      output.write(output_buffer_.data(), output_buffer_.size());
       return command_result;
     }
 

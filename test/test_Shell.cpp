@@ -174,6 +174,62 @@ void test_emptyCommandName() {
   TEST_ASSERT_FALSE(shell.isCommandValid(""));
 }
 
+void test_commandCaseInsensitive() {
+  malib::shell::tiny shell{};
+  shell.registerCommand("ECHO", [](std::string_view command,
+                                 malib::shell::arguments args, auto& output) {
+    output.reset();
+    return output.write("ok", 2).error_or(malib::Error::Ok);
+  });
+
+  stub_output output{};
+  auto result = shell.execute("echo", output);
+  TEST_ASSERT_EQUAL(malib::Error::InvalidCommand, result);  // Should be case sensitive
+}
+
+void test_concurrentCommandExecution() {
+  malib::shell::tiny shell{};
+  int counter = 0;
+  shell.registerCommand("increment", [&counter](std::string_view command,
+                                              malib::shell::arguments args,
+                                              auto& output) {
+    output.reset();
+    counter++;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Simulate work
+    return output.write(std::to_string(counter).c_str(), 1).error_or(malib::Error::Ok);
+  });
+
+  std::vector<std::thread> threads;
+  std::vector<stub_output> outputs(5);
+  
+  for(int i = 0; i < 5; i++) {
+    threads.emplace_back([&shell, &outputs, i]() {
+      shell.execute("increment", outputs[i]);
+    });
+  }
+
+  for(auto& thread : threads) {
+    thread.join();
+  }
+
+  TEST_ASSERT_EQUAL(5, counter);  // Should be exactly 5 due to mutex protection
+}
+
+void test_commandFailureWithOutput() {
+  malib::shell::tiny shell{};
+  shell.registerCommand("fail", [](std::string_view command,
+                                 malib::shell::arguments args, auto& output) {
+    output.reset();
+    output.write("Error occurred!", 16);
+    return malib::Error::InvalidArgument;
+  });
+
+  stub_output output{};
+  auto result = shell.execute("fail", output);
+  TEST_ASSERT_EQUAL(malib::Error::InvalidArgument, result);
+  TEST_ASSERT_EQUAL_STRING("Error occurred!", output.output.c_str());
+}
+
 void test_Shell() {
   RUN_TEST(test_addCommand);
   RUN_TEST(test_execute);
@@ -185,4 +241,7 @@ void test_Shell() {
   RUN_TEST(test_bufferOverflow);
   RUN_TEST(test_threadSafety);
   RUN_TEST(test_emptyCommandName);
+  RUN_TEST(test_commandCaseInsensitive);
+  RUN_TEST(test_concurrentCommandExecution);
+  RUN_TEST(test_commandFailureWithOutput);
 }
