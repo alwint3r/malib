@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 
 #include "malib/Error.hpp"
 #include "malib/concepts.hpp"

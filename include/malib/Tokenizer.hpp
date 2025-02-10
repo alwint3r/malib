@@ -78,7 +78,7 @@ class Tokenizer {
   bool isQuote(char c) { return c == '\'' || c == '"'; }
 
  private:
-  std::array<Token, MaxTokens> markers_{0};
+  std::array<Token, MaxTokens> markers_{};
   std::size_t count_{0};
 };
 
