@@ -127,7 +127,7 @@ class RingBuffer {
   }
 
   size_t size() const noexcept { return count_; }
-  
+
   bool empty() const noexcept { return count_ == 0; }
 
   bool full() const noexcept { return count_ == Capacity; }
@@ -169,5 +169,6 @@ class RingBuffer {
 };
 
 static_assert(std::same_as<RingBuffer<int, 10>::value_type, int>);
-static_assert(buffer_like<RingBuffer<int, 10>>);
+static_assert(container_like<RingBuffer<int, 10>>);
+static_assert(poppable_container<RingBuffer<int, 10>>);
 }  // namespace malib
