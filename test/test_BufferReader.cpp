@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include "malib/BufferReader.hpp"
+#include "malib/FixedStringBuffer.hpp"
 #include "malib/RingBuffer.hpp"
 
 void test_readAll() {
@@ -94,6 +95,51 @@ void test_readUntil_emptyBuffer() {
   TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, result.error());
 }
 
+void test_readUntil_withFixedStringBuffer() {
+  using RingBuffer = malib::RingBuffer<char, 8>;
+  RingBuffer buffer{};
+  buffer.push('h');
+  buffer.push('e');
+  buffer.push('l');
+  buffer.push('l');
+  buffer.push('o');
+  buffer.push('\n');
+  buffer.push('w');
+  buffer.push('x');
+
+  malib::FixedStringBuffer<16> destination{};
+  auto result = malib::BufferReader::readUntil(buffer, '\n', destination);
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(6, result.value());
+  TEST_ASSERT_EQUAL(6, destination.size());
+  TEST_ASSERT_EQUAL_STRING_LEN("hello\n", destination.view().data(), destination.size());
+}
+
+void test_readUntil_withFixedStringBuffer_valueNotFound() {
+  using RingBuffer = malib::RingBuffer<char, 4>;
+  RingBuffer buffer{};
+  buffer.push('t');
+  buffer.push('e');
+  buffer.push('s');
+  buffer.push('t');
+
+  malib::FixedStringBuffer<16> destination;
+  auto result = malib::BufferReader::readUntil(buffer, '\n', destination);
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(4, result.value());
+  TEST_ASSERT_EQUAL_STRING("test", destination.view().data());
+}
+
+void test_readUntil_withFixedStringBuffer_emptyBuffer() {
+  using RingBuffer = malib::RingBuffer<char, 4>;
+  RingBuffer buffer{};
+
+  malib::FixedStringBuffer<16> destination;
+  auto result = malib::BufferReader::readUntil(buffer, '\n', destination);
+  TEST_ASSERT_FALSE(result.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, result.error());
+}
+
 void test_BufferReader() {
   RUN_TEST(test_readAll);
   RUN_TEST(test_readUntil);
@@ -102,4 +148,7 @@ void test_BufferReader() {
   RUN_TEST(test_readUntil_valueNotFound);
   RUN_TEST(test_readUntil_nullPointer);
   RUN_TEST(test_readUntil_emptyBuffer);
+  RUN_TEST(test_readUntil_withFixedStringBuffer);
+  RUN_TEST(test_readUntil_withFixedStringBuffer_valueNotFound);
+  RUN_TEST(test_readUntil_withFixedStringBuffer_emptyBuffer);
 }

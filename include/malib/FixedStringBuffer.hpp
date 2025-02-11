@@ -92,8 +92,14 @@ struct FixedStringBuffer {
       return std::unexpected(Error::MaximumSizeExceeded);
     }
 
-    std::memcpy(buf_.data() + size_, data, size);
-    size_ += size;
+    if (size > 1) {
+      std::memcpy(buf_.data() + size_, data, size);
+      size_ += size;
+    } else {
+      buf_[size_] = *data;
+      ++size_;
+    }
+
     return size;
   }
 

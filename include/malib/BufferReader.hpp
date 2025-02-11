@@ -61,5 +61,37 @@ struct BufferReader {
 
     return count;
   }
+
+  template <typename B, typename C>
+    requires((poppable_container<B> and container_like<B>) and
+             (byte_output_interface<C>))
+  static std::expected<std::size_t, Error> readUntil(
+      B& source, typename B::value_type filtered_value, C& destination) {
+    if (source.empty()) {
+      return std::unexpected(Error::BufferEmpty);
+    }
+
+    std::size_t count = 0;
+
+    while (!source.empty()) {
+      auto result = source.pop();
+      if (result.has_value()) {
+        auto value = result.value();
+        auto write_result = destination.write(&value, 1);
+        if (!write_result.has_value()) {
+          return write_result;
+        }
+
+        count++;
+        if (value == filtered_value) {
+          break;
+        }
+      } else {
+        return count;
+      }
+    }
+    
+    return count;
+  }
 };
 }  // namespace malib
