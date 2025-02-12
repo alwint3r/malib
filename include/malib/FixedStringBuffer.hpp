@@ -13,7 +13,7 @@ struct FixedStringBuffer {
   using iterator = decltype(std::declval<container_type>().begin());
   using const_iterator = decltype(std::declval<container_type>().cbegin());
 
-  Error copy(string_like auto value) {
+  Error copy(std_string auto value) {
     if constexpr (std::is_same_v<std::remove_cv_t<
                                      std::remove_reference_t<decltype(value)>>,
                                  std::string>) {
@@ -23,7 +23,7 @@ struct FixedStringBuffer {
     }
   }
 
-  Error copy(cstyle_string auto value, std::size_t size) {
+  Error copy(c_str auto value, std::size_t size) {
     if (value == nullptr) {
       return Error::NullPointerInput;
     }

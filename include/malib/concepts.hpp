@@ -18,19 +18,19 @@ static_assert(error_type<Error>);
 
 // strings
 template <typename T>
-concept cstyle_string =
+concept c_str =
     std::is_pointer_v<T> &&
     std::is_same_v<std::remove_cv_t<std::remove_pointer_t<T>>, char>;
 
 template <typename T>
-concept string_like =
+concept std_string =
     std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>;
 
-static_assert(string_like<std::string>);
-static_assert(string_like<std::string_view>);
-static_assert(cstyle_string<const char *>);
-static_assert(cstyle_string<char *>);
-static_assert(cstyle_string<void *> == false);
+static_assert(std_string<std::string>);
+static_assert(std_string<std::string_view>);
+static_assert(c_str<const char *>);
+static_assert(c_str<char *>);
+static_assert(c_str<void *> == false);
 
 template <typename Type, typename RetType>
 concept std_expected_any_error = requires {
