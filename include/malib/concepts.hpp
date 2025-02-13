@@ -81,4 +81,11 @@ concept byte_output_interface = requires(T t) {
   } -> std::convertible_to<std::size_t>;
 };
 
+template <typename T>
+concept raw_accessible = requires(T t) {
+  typename T::value_type;
+  { t.data() } -> std::same_as<typename T::value_type *>;
+  { t.size() } -> std::same_as<std::size_t>;
+};
+
 }  // namespace malib

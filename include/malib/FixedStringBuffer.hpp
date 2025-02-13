@@ -9,6 +9,7 @@
 namespace malib {
 template <std::size_t MaxSize>
 struct FixedStringBuffer {
+  using value_type = char;
   using container_type = std::array<char, MaxSize>;
   using iterator = decltype(std::declval<container_type>().begin());
   using const_iterator = decltype(std::declval<container_type>().cbegin());
@@ -59,7 +60,7 @@ struct FixedStringBuffer {
   [[nodiscard]] const_iterator begin() const noexcept { return cbegin(); }
   [[nodiscard]] const_iterator end() const noexcept { return cend(); }
 
-  [[nodiscard]] const_iterator data() const noexcept { return cbegin(); }
+  [[nodiscard]] iterator data() noexcept { return begin(); }
 
   [[nodiscard]] std::size_t size() const noexcept { return size_; }
 
@@ -107,4 +108,6 @@ struct FixedStringBuffer {
   std::array<char, MaxSize> buf_{0};
   std::size_t size_{0};
 };
+
+static_assert(raw_accessible<FixedStringBuffer<256>>);
 }  // namespace malib
