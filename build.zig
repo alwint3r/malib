@@ -69,6 +69,7 @@ pub fn build(b: *std.Build) void {
             "test_StringConverter.cpp",
             "test_ObservableData.cpp",
             "test_FixedSizeWaitableQueue.cpp",
+            "test_FixedLengthLinearBuffer.cpp",
         },
 
         .flags = &[_][]const u8{

@@ -10,6 +10,7 @@ extern void test_WaitableQueue();
 extern void test_StringConverter();
 extern void test_ObservableData();
 extern void test_FixedSizeWaitableQueue();
+extern void test_FixedLengthLinearBuffer();
 
 void setUp() {}
 
@@ -28,6 +29,7 @@ int main() {
   test_StringConverter();
   test_ObservableData();
   test_FixedSizeWaitableQueue();
+  test_FixedLengthLinearBuffer();
 
   return UNITY_END();
 }
