@@ -11,7 +11,13 @@
 #include "malib/concepts.hpp"
 
 namespace malib {
-template <std::copyable T, size_t Capacity>
+
+enum class OverwritePolicy {
+  Discard,    // Discard new elements when buffer is full
+  Overwrite   // Overwrite oldest elements when buffer is full
+};
+
+template <std::copyable T, size_t Capacity, OverwritePolicy Policy = OverwritePolicy::Discard>
 class RingBuffer {
   static_assert(Capacity > 0);
 
@@ -20,8 +26,8 @@ class RingBuffer {
 
   RingBuffer() noexcept = default;
   ~RingBuffer() noexcept = default;
-  RingBuffer(const RingBuffer&) = delete;
-  RingBuffer& operator=(const RingBuffer&) = delete;
+  RingBuffer(const RingBuffer&) = default;
+  RingBuffer& operator=(const RingBuffer&) = default;
   RingBuffer(RingBuffer&&) noexcept = default;
   RingBuffer& operator=(RingBuffer&&) noexcept = default;
 
@@ -40,7 +46,14 @@ class RingBuffer {
   Error push(const T& value) {
     std::scoped_lock<std::mutex> lock(mutex_);
     if (count_ == Capacity) {
-      return Error::BufferFull;
+      if constexpr (Policy == OverwritePolicy::Discard) {
+        return Error::BufferFull;
+      } else {
+        buffer_[head_] = value;
+        increment_head();
+        tail_ = head_;
+        return Error::Ok;
+      }
     }
 
     buffer_[tail_] = value;
@@ -64,7 +77,14 @@ class RingBuffer {
   Error push(T&& value) {
     std::scoped_lock<std::mutex> lock(mutex_);
     if (count_ == Capacity) {
-      return Error::BufferFull;
+      if constexpr (Policy == OverwritePolicy::Discard) {
+        return Error::BufferFull;
+      } else {
+        buffer_[head_] = std::move(value);
+        increment_head();
+        tail_ = head_;
+        return Error::Ok;
+      }
     }
 
     buffer_[tail_] = std::move(value);
@@ -126,13 +146,15 @@ class RingBuffer {
     return {std::move(elements), count};
   }
 
-  size_t size() const noexcept { return count_; }
+  [[nodiscard]] size_t size() const noexcept { return count_; }
 
-  bool empty() const noexcept { return count_ == 0; }
+  [[nodiscard]] bool empty() const noexcept { return count_ == 0; }
 
-  bool full() const noexcept { return count_ == Capacity; }
+  [[nodiscard]] bool full() const noexcept { return count_ == Capacity; }
 
-  constexpr size_t capacity() const noexcept { return Capacity; }
+  [[nodiscard]] constexpr size_t capacity() const noexcept { return Capacity; }
+
+  [[nodiscard]] size_t free_space() const noexcept { return Capacity - count_; }
 
   void clear() {
     std::scoped_lock<std::mutex> lock(mutex_);
