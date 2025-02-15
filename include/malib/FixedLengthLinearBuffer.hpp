@@ -4,16 +4,20 @@
 #include <concepts>
 #include <cstring>
 #include <expected>
+#include <mutex>
 #include <type_traits>
 
 #include "malib/Error.hpp"
 
 namespace malib {
-template <typename T, size_t Capacity>
+
+template <typename T, size_t Capacity, bool ThreadSafe = false>
   requires std::copyable<T>
 class FixedLengthLinearBuffer {
   static_assert(Capacity > 0);
   using value_type = T;
+  using mutex_type = std::mutex;
+  using lock_guard = std::lock_guard<mutex_type>;
 
  public:
   FixedLengthLinearBuffer() noexcept = default;
@@ -28,11 +32,101 @@ class FixedLengthLinearBuffer {
     if (data == nullptr) {
       return std::unexpected(Error::NullPointerInput);
     }
+
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return write_impl(data, size);
+    } else {
+      return write_impl(data, size);
+    }
+  }
+
+  template <typename U = T>
+    requires(!std::is_trivially_copyable_v<U>)
+  std::expected<std::size_t, Error> write_move(U* data, std::size_t size) {
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return write_move_impl(data, size);
+    } else {
+      return write_move_impl(data, size);
+    }
+  }
+
+  std::expected<std::size_t, Error> read(T* data, std::size_t size) {
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return read_impl(data, size);
+    } else {
+      return read_impl(data, size);
+    }
+  }
+
+  [[nodiscard]] size_t size() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return current_size_;
+    } else {
+      return current_size_;
+    }
+  }
+
+  [[nodiscard]] constexpr size_t capacity() const noexcept { return Capacity; }
+
+  [[nodiscard]] size_t free_space() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return Capacity - current_size_;
+    } else {
+      return Capacity - current_size_;
+    }
+  }
+
+  [[nodiscard]] bool empty() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return current_size_ == 0;
+    } else {
+      return current_size_ == 0;
+    }
+  }
+
+  [[nodiscard]] bool full() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return current_size_ == Capacity;
+    } else {
+      return current_size_ == Capacity;
+    }
+  }
+
+  void clear() noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      clear_impl();
+    } else {
+      clear_impl();
+    }
+  }
+
+  const T* data() const noexcept { return buffer_.data(); }
+  T* data() noexcept { return buffer_.data(); }
+
+ private:
+  std::expected<std::size_t, Error> write_impl(const T* data,
+                                               std::size_t size) {
     if (full()) {
       return std::unexpected(Error::BufferFull);
     }
 
-    const auto write_size = std::min(free_space(), size);
+    const auto write_size = std::min(Capacity - current_size_, size);
 
     if constexpr (std::is_trivially_copyable_v<T>) {
       std::memcpy(buffer_.data() + current_size_, data, write_size * sizeof(T));
@@ -43,21 +137,16 @@ class FixedLengthLinearBuffer {
     }
 
     current_size_ += write_size;
-
     return write_size;
   }
 
-  template <typename U = T>
-    requires(!std::is_trivially_copyable_v<U>)
-  std::expected<std::size_t, Error> write_move(U* data, std::size_t size) {
-    if (data == nullptr) {
-      return std::unexpected(Error::NullPointerInput);
-    }
+  template <typename U>
+  std::expected<std::size_t, Error> write_move_impl(U* data, std::size_t size) {
     if (full()) {
       return std::unexpected(Error::BufferFull);
     }
 
-    const auto write_size = std::min(free_space(), size);
+    const auto write_size = std::min(Capacity - current_size_, size);
 
     for (size_t i = 0; i < write_size; ++i) {
       buffer_[current_size_ + i] = std::move(data[i]);
@@ -67,10 +156,7 @@ class FixedLengthLinearBuffer {
     return write_size;
   }
 
-  std::expected<std::size_t, Error> read(T* data, std::size_t size) {
-    if (data == nullptr) {
-      return std::unexpected(Error::NullPointerInput);
-    }
+  std::expected<std::size_t, Error> read_impl(T* data, std::size_t size) {
     if (empty()) {
       return std::unexpected(Error::BufferEmpty);
     }
@@ -98,24 +184,14 @@ class FixedLengthLinearBuffer {
     return read_size;
   }
 
-  [[nodiscard]] size_t size() const noexcept { return current_size_; }
-  [[nodiscard]] size_t capacity() const noexcept { return Capacity; }
-  [[nodiscard]] size_t free_space() const noexcept {
-    return Capacity - current_size_;
-  }
-  [[nodiscard]] bool empty() const noexcept { return current_size_ == 0; }
-  [[nodiscard]] bool full() const noexcept { return current_size_ == Capacity; }
-
-  void clear() noexcept {
+  void clear_impl() noexcept {
     current_size_ = 0;
     buffer_ = {};
   }
 
-  const T* data() const noexcept { return buffer_.data(); }
-  T* data() noexcept { return buffer_.data(); }
-
- private:
   size_t current_size_{0};
   alignas(T) std::array<T, Capacity> buffer_{};
+  [[no_unique_address]] mutable mutex_type mutex_;
 };
+
 }  // namespace malib

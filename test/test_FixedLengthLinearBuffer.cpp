@@ -1,7 +1,14 @@
 #include <unity.h>
 
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <malib/FixedLengthLinearBuffer.hpp>
+#include <mutex>
 #include <string>
+#include <thread>
+#include <vector>
 
 void test_FixedLengthLinearBuffer_trivially_copyable_type() {
   malib::FixedLengthLinearBuffer<int, 4> buffer;
@@ -223,7 +230,7 @@ void test_FixedLengthLinearBuffer_aligned_structs() {
   {
     malib::FixedLengthLinearBuffer<Aligned4, 3> buffer;
     Aligned4 data[2] = {{1, 100}, {2, 200}};
-    
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -232,7 +239,7 @@ void test_FixedLengthLinearBuffer_aligned_structs() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(1, read_data[0].a);
     TEST_ASSERT_EQUAL(100, read_data[0].b);
     TEST_ASSERT_EQUAL(2, read_data[1].a);
@@ -243,7 +250,7 @@ void test_FixedLengthLinearBuffer_aligned_structs() {
   {
     malib::FixedLengthLinearBuffer<Aligned8, 3> buffer;
     Aligned8 data[2] = {{1, 1000000}, {2, 2000000}};
-    
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -252,7 +259,7 @@ void test_FixedLengthLinearBuffer_aligned_structs() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(1, read_data[0].a);
     TEST_ASSERT_EQUAL(1000000, read_data[0].b);
     TEST_ASSERT_EQUAL(2, read_data[1].a);
@@ -269,22 +276,24 @@ void test_FixedLengthLinearBuffer_packed_structs() {
   };  // total: 6 bytes
 
   struct LargePackedStruct {
-    char a;      // 1 byte
-    int64_t b;   // 8 bytes, no padding before
-    int16_t c;   // 2 bytes, no padding before
-    char d;      // 1 byte
+    char a;     // 1 byte
+    int64_t b;  // 8 bytes, no padding before
+    int16_t c;  // 2 bytes, no padding before
+    char d;     // 1 byte
   };  // total: 12 bytes
 #pragma pack(pop)
 
   // Verify the structs are actually packed
-  static_assert(sizeof(PackedStruct) == 6, "PackedStruct is not properly packed");
-  static_assert(sizeof(LargePackedStruct) == 12, "LargePackedStruct is not properly packed");
+  static_assert(sizeof(PackedStruct) == 6,
+                "PackedStruct is not properly packed");
+  static_assert(sizeof(LargePackedStruct) == 12,
+                "LargePackedStruct is not properly packed");
 
   // Test small packed struct
   {
     malib::FixedLengthLinearBuffer<PackedStruct, 3> buffer;
     PackedStruct data[2] = {{1, 100, 2}, {3, 200, 4}};
-    
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -293,7 +302,7 @@ void test_FixedLengthLinearBuffer_packed_structs() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(1, read_data[0].a);
     TEST_ASSERT_EQUAL(100, read_data[0].b);
     TEST_ASSERT_EQUAL(2, read_data[0].c);
@@ -306,7 +315,7 @@ void test_FixedLengthLinearBuffer_packed_structs() {
   {
     malib::FixedLengthLinearBuffer<LargePackedStruct, 3> buffer;
     LargePackedStruct data[2] = {{1, 1000000, 42, 3}, {4, 2000000, 84, 6}};
-    
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -315,7 +324,7 @@ void test_FixedLengthLinearBuffer_packed_structs() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(1, read_data[0].a);
     TEST_ASSERT_EQUAL(1000000, read_data[0].b);
     TEST_ASSERT_EQUAL(42, read_data[0].c);
@@ -332,16 +341,16 @@ void test_FixedLengthLinearBuffer_bitfields() {
     unsigned int a : 3;  // 3 bits
     unsigned int b : 5;  // 5 bits
     unsigned int c : 4;  // 4 bits
-    int d : 20;         // 20 bits
+    int d : 20;          // 20 bits
   };  // total: 32 bits (4 bytes)
 
   struct ComplexBitFields {
-    unsigned int flag1 : 1;     // 1 bit
-    unsigned int value1 : 7;    // 7 bits
-    unsigned int : 0;           // Force alignment to next word boundary
-    unsigned int flag2 : 1;     // 1 bit
-    unsigned int value2 : 15;   // 15 bits
-    signed int svalue : 8;      // 8 bits
+    unsigned int flag1 : 1;    // 1 bit
+    unsigned int value1 : 7;   // 7 bits
+    unsigned int : 0;          // Force alignment to next word boundary
+    unsigned int flag2 : 1;    // 1 bit
+    unsigned int value2 : 15;  // 15 bits
+    signed int svalue : 8;     // 8 bits
   };
 
   // Test simple bitfields
@@ -349,9 +358,8 @@ void test_FixedLengthLinearBuffer_bitfields() {
     malib::FixedLengthLinearBuffer<BitFieldStruct, 3> buffer;
     BitFieldStruct data[2] = {
         {/* a */ 5, /* b */ 16, /* c */ 10, /* d */ -1024},
-        {/* a */ 2, /* b */ 30, /* c */ 12, /* d */ 1024}
-    };
-    
+        {/* a */ 2, /* b */ 30, /* c */ 12, /* d */ 1024}};
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -360,7 +368,7 @@ void test_FixedLengthLinearBuffer_bitfields() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(5, read_data[0].a);
     TEST_ASSERT_EQUAL(16, read_data[0].b);
     TEST_ASSERT_EQUAL(10, read_data[0].c);
@@ -374,11 +382,11 @@ void test_FixedLengthLinearBuffer_bitfields() {
   // Test complex bitfields with alignment and mixed signs
   {
     malib::FixedLengthLinearBuffer<ComplexBitFields, 3> buffer;
-    ComplexBitFields data[2] = {
-        {/* flag1 */ 1, /* value1 */ 127, /* flag2 */ 0, /* value2 */ 1024, /* svalue */ -42},
-        {/* flag1 */ 0, /* value1 */ 64,  /* flag2 */ 1, /* value2 */ 32000, /* svalue */ 42}
-    };
-    
+    ComplexBitFields data[2] = {{/* flag1 */ 1, /* value1 */ 127, /* flag2 */ 0,
+                                 /* value2 */ 1024, /* svalue */ -42},
+                                {/* flag1 */ 0, /* value1 */ 64, /* flag2 */ 1,
+                                 /* value2 */ 32000, /* svalue */ 42}};
+
     auto write_result = buffer.write(data, 2);
     TEST_ASSERT_TRUE(write_result.has_value());
     TEST_ASSERT_EQUAL(2, write_result.value());
@@ -387,13 +395,13 @@ void test_FixedLengthLinearBuffer_bitfields() {
     auto read_result = buffer.read(read_data, 2);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(2, read_result.value());
-    
+
     TEST_ASSERT_EQUAL(1, read_data[0].flag1);
     TEST_ASSERT_EQUAL(127, read_data[0].value1);
     TEST_ASSERT_EQUAL(0, read_data[0].flag2);
     TEST_ASSERT_EQUAL(1024, read_data[0].value2);
     TEST_ASSERT_EQUAL(-42, read_data[0].svalue);
-    
+
     TEST_ASSERT_EQUAL(0, read_data[1].flag1);
     TEST_ASSERT_EQUAL(64, read_data[1].value1);
     TEST_ASSERT_EQUAL(1, read_data[1].flag2);
