@@ -129,6 +129,83 @@ void test_FixedLengthLinearBuffer_append_one() {
   TEST_ASSERT_EQUAL(malib::Error::BufferFull, result.error());
 }
 
+void test_FixedLengthLinearBuffer_read_write() {
+  malib::FixedLengthLinearBuffer<int, 4> buffer;
+
+  // Test reading from empty buffer
+  int read_data[4];
+  auto read_result = buffer.read(read_data, 4);
+  TEST_ASSERT_FALSE(read_result.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, read_result.error());
+
+  // Test write then read
+  int write_data[] = {1, 2, 3};
+  auto write_result = buffer.write(write_data, 3);
+  TEST_ASSERT_TRUE(write_result.has_value());
+  TEST_ASSERT_EQUAL(3, write_result.value());
+
+  read_result = buffer.read(read_data, 2);
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(2, read_result.value());
+  TEST_ASSERT_EQUAL(1, buffer.size());
+  TEST_ASSERT_EQUAL(1, read_data[0]);
+  TEST_ASSERT_EQUAL(2, read_data[1]);
+
+  // Test read more than buffer size
+  read_result = buffer.read(read_data, 3);
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(1, read_result.value());
+  TEST_ASSERT_EQUAL(0, buffer.size());
+  TEST_ASSERT_EQUAL(3, read_data[0]);
+}
+
+void test_FixedLengthLinearBuffer_read_null() {
+  malib::FixedLengthLinearBuffer<int, 4> buffer;
+  int data[] = {1, 2, 3};
+  buffer.write(data, 3);
+
+  auto result = buffer.read(nullptr, 2);
+  TEST_ASSERT_FALSE(result.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerInput, result.error());
+}
+
+void test_FixedLengthLinearBuffer_read_non_trivial() {
+  malib::FixedLengthLinearBuffer<std::string, 3> buffer;
+  std::string write_data[] = {"test1", "test2", "test3"};
+  buffer.write(write_data, 3);
+
+  std::string read_data[3];
+  auto result = buffer.read(read_data, 3);
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(3, result.value());
+  TEST_ASSERT_EQUAL_STRING("test1", read_data[0].c_str());
+  TEST_ASSERT_EQUAL_STRING("test2", read_data[1].c_str());
+  TEST_ASSERT_EQUAL_STRING("test3", read_data[2].c_str());
+}
+
+void test_FixedLengthLinearBuffer_read_non_trivial_partial() {
+  malib::FixedLengthLinearBuffer<std::string, 3> buffer;
+  std::string write_data[] = {"first", "second", "third"};
+  buffer.write(write_data, 3);
+
+  // Read first two strings
+  std::string read_data[2];
+  auto result = buffer.read(read_data, 2);
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(2, result.value());
+  TEST_ASSERT_EQUAL(1, buffer.size());
+  TEST_ASSERT_EQUAL_STRING("first", read_data[0].c_str());
+  TEST_ASSERT_EQUAL_STRING("second", read_data[1].c_str());
+
+  // Read remaining string
+  std::string remaining_data[1];
+  result = buffer.read(remaining_data, 1);
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(1, result.value());
+  TEST_ASSERT_EQUAL(0, buffer.size());
+  TEST_ASSERT_EQUAL_STRING("third", remaining_data[0].c_str());
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -137,4 +214,8 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_write_partial);
   RUN_TEST(test_FixedLengthLinearBuffer_write_non_trivial);
   RUN_TEST(test_FixedLengthLinearBuffer_append_one);
+  RUN_TEST(test_FixedLengthLinearBuffer_read_write);
+  RUN_TEST(test_FixedLengthLinearBuffer_read_null);
+  RUN_TEST(test_FixedLengthLinearBuffer_read_non_trivial);
+  RUN_TEST(test_FixedLengthLinearBuffer_read_non_trivial_partial);
 }

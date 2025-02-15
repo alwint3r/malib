@@ -67,6 +67,37 @@ class FixedLengthLinearBuffer {
     return write_size;
   }
 
+  std::expected<std::size_t, Error> read(T* data, std::size_t size) {
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+    if (empty()) {
+      return std::unexpected(Error::BufferEmpty);
+    }
+
+    const auto read_size = std::min(current_size_, size);
+
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      std::memcpy(data, buffer_.data(), read_size * sizeof(T));
+      // Move remaining data to front
+      if (read_size < current_size_) {
+        std::memmove(buffer_.data(), buffer_.data() + read_size,
+                     (current_size_ - read_size) * sizeof(T));
+      }
+    } else {
+      for (size_t i = 0; i < read_size; ++i) {
+        data[i] = buffer_[i];
+      }
+      // Move remaining data to front
+      for (size_t i = 0; i < current_size_ - read_size; ++i) {
+        buffer_[i] = std::move(buffer_[i + read_size]);
+      }
+    }
+
+    current_size_ -= read_size;
+    return read_size;
+  }
+
   [[nodiscard]] size_t size() const noexcept { return current_size_; }
   [[nodiscard]] size_t capacity() const noexcept { return Capacity; }
   [[nodiscard]] size_t free_space() const noexcept {
