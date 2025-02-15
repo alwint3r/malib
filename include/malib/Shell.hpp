@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "malib/FixedLengthLinearBuffer.hpp"
 #include "malib/FixedStringBuffer.hpp"
 #include "malib/Token.hpp"
 #include "malib/Tokenizer.hpp"
@@ -17,7 +18,8 @@ namespace shell {
 
 using arguments = TokenViews;
 
-template <byte_output_interface OutputBufferType = FixedStringBuffer<256>,
+template <byte_output_interface OutputBufferType =
+              FixedLengthLinearBuffer<char, 256>,
           std::size_t MaxTokens = 32>
 struct tiny {
   using callback =

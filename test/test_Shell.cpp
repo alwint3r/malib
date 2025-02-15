@@ -17,7 +17,6 @@ void test_addCommand() {
   malib::shell::tiny shell{};
   shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
-    output.reset();
     return output.write("test", 4).error_or(malib::Error::Ok);
   });
 
@@ -26,7 +25,6 @@ void test_addCommand() {
   // Test command overwrite
   shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
-    output.reset();
     return output.write("test2", 5).error_or(malib::Error::Ok);
   });
 
@@ -40,7 +38,6 @@ void test_execute() {
   malib::shell::tiny shell{};
   shell.registerCommand("echo", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
-    output.reset();
     std::string result{};
 
     for (const auto& arg : args) {
@@ -76,7 +73,7 @@ void test_emptyInput() {
 
 void test_nullCallback() {
   malib::shell::tiny shell{};
-  
+
   // Test registering null callback
   auto result = shell.registerCommand("nullcmd", nullptr);
   TEST_ASSERT_EQUAL(malib::Error::NullPointerMember, result);
@@ -101,7 +98,6 @@ void test_emptyArguments() {
   malib::shell::tiny shell{};
   shell.registerCommand("test", [](std::string_view command,
                                    malib::shell::arguments args, auto& output) {
-    output.reset();
     std::string result = std::to_string(args.size());
     return output.write(result.c_str(), result.size())
         .error_or(malib::Error::Ok);
@@ -118,7 +114,6 @@ void test_bufferOverflow() {
   shell.registerCommand(
       "overflow",
       [](std::string_view command, malib::shell::arguments args, auto& output) {
-        output.reset();
         TEST_ASSERT_EQUAL(5, output.capacity());
         TEST_ASSERT_EQUAL(0, output.size());
         auto res = output.write("too long", 8);
@@ -139,7 +134,6 @@ void test_threadSafety() {
   shell.registerCommand(
       "count",
       [](std::string_view command, malib::shell::arguments args, auto& output) {
-        output.reset();
         static int counter = 0;
         counter++;
 
@@ -161,13 +155,11 @@ void test_threadSafety() {
 
 void test_emptyCommandName() {
   malib::shell::tiny shell{};
-  
+
   // Test registering empty command name
-  auto result = shell.registerCommand("", [](std::string_view command,
-                                           malib::shell::arguments args,
-                                           auto& output) {
-    return malib::Error::Ok;
-  });
+  auto result = shell.registerCommand(
+      "", [](std::string_view command, malib::shell::arguments args,
+             auto& output) { return malib::Error::Ok; });
   TEST_ASSERT_EQUAL(malib::Error::EmptyInput, result);
 
   // Verify command was not registered
@@ -177,38 +169,38 @@ void test_emptyCommandName() {
 void test_commandCaseInsensitive() {
   malib::shell::tiny shell{};
   shell.registerCommand("ECHO", [](std::string_view command,
-                                 malib::shell::arguments args, auto& output) {
-    output.reset();
+                                   malib::shell::arguments args, auto& output) {
     return output.write("ok", 2).error_or(malib::Error::Ok);
   });
 
   stub_output output{};
   auto result = shell.execute("echo", output);
-  TEST_ASSERT_EQUAL(malib::Error::InvalidCommand, result);  // Should be case sensitive
+  TEST_ASSERT_EQUAL(malib::Error::InvalidCommand,
+                    result);  // Should be case sensitive
 }
 
 void test_concurrentCommandExecution() {
   malib::shell::tiny shell{};
   int counter = 0;
-  shell.registerCommand("increment", [&counter](std::string_view command,
-                                              malib::shell::arguments args,
-                                              auto& output) {
-    output.reset();
-    counter++;
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Simulate work
-    return output.write(std::to_string(counter).c_str(), 1).error_or(malib::Error::Ok);
-  });
+  shell.registerCommand(
+      "increment", [&counter](std::string_view command,
+                              malib::shell::arguments args, auto& output) {
+        counter++;
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(10));  // Simulate work
+        return output.write(std::to_string(counter).c_str(), 1)
+            .error_or(malib::Error::Ok);
+      });
 
   std::vector<std::thread> threads;
   std::vector<stub_output> outputs(5);
-  
-  for(int i = 0; i < 5; i++) {
-    threads.emplace_back([&shell, &outputs, i]() {
-      shell.execute("increment", outputs[i]);
-    });
+
+  for (int i = 0; i < 5; i++) {
+    threads.emplace_back(
+        [&shell, &outputs, i]() { shell.execute("increment", outputs[i]); });
   }
 
-  for(auto& thread : threads) {
+  for (auto& thread : threads) {
     thread.join();
   }
 
@@ -218,8 +210,7 @@ void test_concurrentCommandExecution() {
 void test_commandFailureWithOutput() {
   malib::shell::tiny shell{};
   shell.registerCommand("fail", [](std::string_view command,
-                                 malib::shell::arguments args, auto& output) {
-    output.reset();
+                                   malib::shell::arguments args, auto& output) {
     output.write("Error occurred!", 16);
     return malib::Error::InvalidArgument;
   });
@@ -228,6 +219,29 @@ void test_commandFailureWithOutput() {
   auto result = shell.execute("fail", output);
   TEST_ASSERT_EQUAL(malib::Error::InvalidArgument, result);
   TEST_ASSERT_EQUAL_STRING("Error occurred!", output.output.c_str());
+}
+
+void test_outputBufferOverflow() {
+  malib::shell::tiny<malib::FixedLengthLinearBuffer<char, 8>> shell{};
+  shell.registerCommand(
+      "overflow",
+      [](std::string_view command, malib::shell::arguments args, auto& output) {
+        auto res = output.write("AAAAAAA", 8);
+        TEST_ASSERT_TRUE(res.has_value());
+        TEST_ASSERT_EQUAL(8, res.value());
+
+        res = output.write("1234", 4);
+        TEST_ASSERT_FALSE(res.has_value());
+        TEST_ASSERT_EQUAL(malib::Error::BufferFull, res.error());
+
+        return res.error_or(malib::Error::Ok);
+      });
+
+  stub_output output{};
+  auto result = shell.execute("overflow", output);
+  TEST_ASSERT_EQUAL(malib::Error::BufferFull, result);
+  TEST_ASSERT_EQUAL(8, output.output.size());
+  TEST_ASSERT_EQUAL_STRING("AAAAAAA", output.output.c_str());
 }
 
 void test_Shell() {
@@ -243,5 +257,6 @@ void test_Shell() {
   RUN_TEST(test_emptyCommandName);
   RUN_TEST(test_commandCaseInsensitive);
   RUN_TEST(test_concurrentCommandExecution);
+  RUN_TEST(test_outputBufferOverflow);
   RUN_TEST(test_commandFailureWithOutput);
 }

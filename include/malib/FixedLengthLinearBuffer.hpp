@@ -80,6 +80,9 @@ class FixedLengthLinearBuffer {
     buffer_ = {};
   }
 
+  const T* data() const noexcept { return buffer_.data(); }
+  T* data() noexcept { return buffer_.data(); }
+
  private:
   size_t current_size_{0};
   alignas(T) std::array<T, Capacity> buffer_{};
