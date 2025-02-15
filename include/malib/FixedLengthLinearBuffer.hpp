@@ -24,21 +24,26 @@ class FixedLengthLinearBuffer {
   FixedLengthLinearBuffer& operator=(FixedLengthLinearBuffer&&) noexcept =
       default;
 
-  template <typename U = T>
-    requires std::is_trivially_copyable_v<U>
-  std::expected<std::size_t, Error> write(const U* data, std::size_t size) {
+  std::expected<std::size_t, Error> write(const T* data, std::size_t size) {
     if (data == nullptr) {
       return std::unexpected(Error::NullPointerInput);
     }
-    if (current_size_ == Capacity) {
+    if (full()) {
       return std::unexpected(Error::BufferFull);
     }
 
-    const auto free_space = Capacity - current_size_;
-    const auto write_size = std::min(free_space, size);
+    const auto write_size = std::min(free_space(), size);
 
-    std::memcpy(buffer_.data() + current_size_, data, write_size * sizeof(U));
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      std::memcpy(buffer_.data() + current_size_, data, write_size * sizeof(T));
+    } else {
+      for (size_t i = 0; i < write_size; ++i) {
+        buffer_[current_size_ + i] = data[i];
+      }
+    }
+
     current_size_ += write_size;
+
     return write_size;
   }
 
@@ -48,12 +53,11 @@ class FixedLengthLinearBuffer {
     if (data == nullptr) {
       return std::unexpected(Error::NullPointerInput);
     }
-    if (current_size_ == Capacity) {
+    if (full()) {
       return std::unexpected(Error::BufferFull);
     }
 
-    const auto free_space = Capacity - current_size_;
-    const auto write_size = std::min(free_space, size);
+    const auto write_size = std::min(free_space(), size);
 
     for (size_t i = 0; i < write_size; ++i) {
       buffer_[current_size_ + i] = std::move(data[i]);
