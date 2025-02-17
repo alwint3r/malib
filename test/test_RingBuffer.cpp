@@ -268,6 +268,107 @@ void test_overwrite_policy_sequence_pop() {
   TEST_ASSERT_EQUAL(val3.value(), 5);
 }
 
+void test_read_write_basic() {
+  malib::RingBuffer<int, 5> buffer;
+  int input[] = {1, 2, 3};
+  int output[3] = {0};
+
+  auto write_result = buffer.write(input, 3);
+  TEST_ASSERT_TRUE(write_result.has_value());
+  TEST_ASSERT_EQUAL(3, write_result.value());
+
+  auto read_result = buffer.read(output, 3);
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(3, read_result.value());
+  TEST_ASSERT_EQUAL_INT_ARRAY(input, output, 3);
+}
+
+void test_read_write_wraparound() {
+  malib::RingBuffer<int, 4> buffer;
+  int input[] = {1, 2, 3, 4};
+  int output[4] = {0};
+
+  // Fill buffer
+  auto write_result = buffer.write(input, 4);
+  TEST_ASSERT_EQUAL(4, write_result.value());
+
+  // Read two elements
+  buffer.read(output, 2);
+
+  // Write two more elements to trigger wraparound
+  int more_input[] = {5, 6};
+  write_result = buffer.write(more_input, 2);
+  TEST_ASSERT_EQUAL(2, write_result.value());
+
+  // Read all elements
+  int final_output[4] = {0};
+  auto read_result = buffer.read(final_output, 4);
+  TEST_ASSERT_EQUAL(4, read_result.value());
+
+  int expected[] = {3, 4, 5, 6};
+  TEST_ASSERT_EQUAL_INT_ARRAY(expected, final_output, 4);
+}
+
+void test_read_write_null_pointer() {
+  malib::RingBuffer<int, 3> buffer;
+  int input[] = {1, 2, 3};
+
+  auto write_result = buffer.write(nullptr, 3);
+  TEST_ASSERT_FALSE(write_result.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerInput, write_result.error());
+
+  auto read_result = buffer.read(nullptr, 3);
+  TEST_ASSERT_FALSE(read_result.has_value());
+  TEST_ASSERT_EQUAL(malib::Error::NullPointerInput, read_result.error());
+}
+
+void test_read_write_overwrite_policy() {
+  malib::RingBuffer<int, 3, malib::OverwritePolicy::Overwrite> buffer;
+  int input[] = {1, 2, 3, 4, 5};
+  int output[5] = {0};
+
+  // Write more than capacity
+  auto write_result = buffer.write(input, 5);
+  TEST_ASSERT_EQUAL(5, write_result.value());
+
+  // Read result should be last 3 elements
+  auto read_result = buffer.read(output, 3);
+  TEST_ASSERT_EQUAL(3, read_result.value());
+
+  int expected[] = {3, 4, 5};
+  TEST_ASSERT_EQUAL_INT_ARRAY(expected, output, 3);
+}
+
+void test_read_multiple_times() {
+  malib::RingBuffer<int, 5> buffer;
+  int input[] = {1, 2, 3, 4, 5};
+  int output1[3] = {0};
+  int output2[2] = {0};
+  
+  // Write all elements
+  auto write_result = buffer.write(input, 5);
+  TEST_ASSERT_EQUAL(5, write_result.value());
+  
+  // First read - get first 3 elements
+  auto read_result1 = buffer.read(output1, 3);
+  TEST_ASSERT_EQUAL(3, read_result1.value());
+  int expected1[] = {1, 2, 3};
+  TEST_ASSERT_EQUAL_INT_ARRAY(expected1, output1, 3);
+  
+  // Second read - get remaining 2 elements
+  auto read_result2 = buffer.read(output2, 2);
+  TEST_ASSERT_EQUAL(2, read_result2.value());
+  int expected2[] = {4, 5};
+  TEST_ASSERT_EQUAL_INT_ARRAY(expected2, output2, 2);
+  
+  // Third read - should return 0 as buffer is empty
+  int output3[1] = {0};
+  auto read_result3 = buffer.read(output3, 1);
+  TEST_ASSERT_EQUAL(0, read_result3.value());
+  
+  TEST_ASSERT_TRUE(buffer.empty());
+}
+
 void test_RingBuffer() {
   RUN_TEST(test_push_pop);
   RUN_TEST(test_clear);
@@ -279,4 +380,9 @@ void test_RingBuffer() {
   RUN_TEST(test_consume_all);
   RUN_TEST(test_overwrite_policy);           // Add new test to the suite
   RUN_TEST(test_overwrite_policy_sequence);  // Add new test to the suite
+  RUN_TEST(test_read_write_basic);
+  RUN_TEST(test_read_write_wraparound);
+  RUN_TEST(test_read_write_null_pointer);
+  RUN_TEST(test_read_write_overwrite_policy);
+  RUN_TEST(test_read_multiple_times);
 }

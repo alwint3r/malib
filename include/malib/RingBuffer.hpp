@@ -13,11 +13,12 @@
 namespace malib {
 
 enum class OverwritePolicy {
-  Discard,    // Discard new elements when buffer is full
-  Overwrite   // Overwrite oldest elements when buffer is full
+  Discard,   // Discard new elements when buffer is full
+  Overwrite  // Overwrite oldest elements when buffer is full
 };
 
-template <std::copyable T, size_t Capacity, OverwritePolicy Policy = OverwritePolicy::Discard>
+template <std::copyable T, size_t Capacity,
+          OverwritePolicy Policy = OverwritePolicy::Discard>
 class RingBuffer {
   static_assert(Capacity > 0);
 
@@ -32,16 +33,17 @@ class RingBuffer {
   RingBuffer& operator=(RingBuffer&&) noexcept = default;
 
   /**
-   * @brief Pushes a value into the ring buffer.
+   * @brief Pushes a value into the ring buffer
    *
-   * This function attempts to push a value into the ring buffer. If the buffer
-   * is full, it returns an error indicating that the buffer is full. Otherwise,
-   * it inserts the value at the current tail position, increments the tail
-   * position, and increases the count of elements in the buffer.
+   * If the buffer is full, the behavior depends on the OverwritePolicy:
+   * - For Discard policy: Returns BufferFull error without modifying the buffer
+   * - For Overwrite policy: Overwrites the oldest value and updates head/tail
+   * accordingly
    *
-   * @param value The value to be pushed into the buffer.
-   * @return Error::Ok if the value was successfully pushed into the buffer,
-   *         Error::BufferFull if the buffer is full.
+   * @param value The value to push into the buffer
+   * @return Error::Ok on successful push, Error::BufferFull if buffer is full
+   * and Discard policy is used
+   * @thread_safety Thread-safe through internal mutex
    */
   Error push(const T& value) {
     std::scoped_lock<std::mutex> lock(mutex_);
@@ -63,16 +65,18 @@ class RingBuffer {
   }
 
   /**
-   * @brief Pushes a value into the ring buffer.
+   * @brief Pushes a new element into the ring buffer using move semantics.
    *
-   * This function attempts to push a value into the ring buffer. If the buffer
-   * is full, it returns an error indicating that the buffer is full. Otherwise,
-   * it inserts the value at the current tail position, increments the tail
-   * position, and increases the count of elements in the buffer.
+   * @details Depending on the buffer's OverwritePolicy:
+   *          - For Discard policy: Returns Error::BufferFull if buffer is full
+   *          - For Overwrite policy: Overwrites oldest element if buffer is
+   * full
    *
-   * @param value The value to be pushed into the buffer.
-   * @return Error::Ok if the value was successfully pushed into the buffer,
-   *         Error::BufferFull if the buffer is full.
+   * @param value The value to be moved into the buffer
+   * @return Error::Ok if successful, Error::BufferFull if buffer is full (in
+   * Discard policy)
+   *
+   * @thread_safety Thread-safe (protected by mutex)
    */
   Error push(T&& value) {
     std::scoped_lock<std::mutex> lock(mutex_);
@@ -161,6 +165,80 @@ class RingBuffer {
     head_ = 0;
     tail_ = 0;
     count_ = 0;
+  }
+
+  std::expected<std::size_t, Error> write(const T* data, std::size_t size) {
+    std::scoped_lock<std::mutex> lock(mutex_);
+
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+
+    if (size == 0) {
+      return 0;
+    }
+
+    if constexpr (Policy == OverwritePolicy::Discard) {
+      if (free_space() < size) {
+        return std::unexpected(Error::BufferFull);
+      }
+    }
+
+    const size_t available_space = free_space();
+    const size_t write_size = Policy == OverwritePolicy::Discard
+                                  ? std::min(size, available_space)
+                                  : size;
+
+    size_t elements_written = 0;
+    while (elements_written < write_size) {
+      const size_t space_to_end = Capacity - tail_;
+      const size_t chunk_size =
+          std::min(space_to_end, write_size - elements_written);
+
+      std::copy_n(data + elements_written, chunk_size, buffer_.begin() + tail_);
+      elements_written += chunk_size;
+
+      if (Policy == OverwritePolicy::Overwrite &&
+          count_ + chunk_size > Capacity) {
+        const size_t overflow = count_ + chunk_size - Capacity;
+        head_ = (tail_ + chunk_size) % Capacity;
+        count_ = Capacity;
+      } else {
+        count_ += chunk_size;
+      }
+
+      tail_ = (tail_ + chunk_size) % Capacity;
+    }
+
+    return elements_written;
+  }
+
+  std::expected<std::size_t, Error> read(T* data, std::size_t size) {
+    std::scoped_lock<std::mutex> lock(mutex_);
+
+    if (data == nullptr) {
+      return std::unexpected(Error::NullPointerInput);
+    }
+
+    if (size == 0 || count_ == 0) {
+      return 0;
+    }
+
+    const size_t read_size = std::min(size, count_);
+    size_t elements_read = 0;
+
+    while (elements_read < read_size) {
+      const size_t data_to_end = Capacity - head_;
+      const size_t chunk_size =
+          std::min(data_to_end, read_size - elements_read);
+
+      std::copy_n(buffer_.begin() + head_, chunk_size, data + elements_read);
+      elements_read += chunk_size;
+      count_ -= chunk_size;
+      head_ = (head_ + chunk_size) % Capacity;
+    }
+
+    return elements_read;
   }
 
  private:
