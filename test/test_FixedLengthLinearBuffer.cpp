@@ -526,6 +526,75 @@ void test_FixedLengthLinearBuffer_iterators_string() {
   }
 }
 
+void test_FixedLengthLinearBuffer_format_char() {
+  malib::FixedLengthLinearBuffer<char, 32> buffer;
+
+  // Write formatted string into buffer
+  std::string formatted = std::format("Test {:d}, {:.2f}", 42, 3.14159);
+  auto result = buffer.write(formatted.data(), formatted.size());
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(formatted.size(), result.value());
+
+  // Verify the content
+  char read_data[32] = {0};
+  auto read_result = buffer.read(read_data, formatted.size());
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(formatted.size(), read_result.value());
+  TEST_ASSERT_EQUAL_STRING("Test 42, 3.14", read_data);
+
+  // Test writing multiple formatted strings
+  buffer.clear();
+  std::string str1 = std::format("{:>5}", "abc");
+  std::string str2 = std::format("{:<5}", "xyz");
+
+  result = buffer.write(str1.data(), str1.size());
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(str1.size(), result.value());
+
+  result = buffer.write(str2.data(), str2.size());
+  TEST_ASSERT_TRUE(result.has_value());
+  TEST_ASSERT_EQUAL(str2.size(), result.value());
+
+  // Read and verify combined result
+  std::memset(read_data, 0, sizeof(read_data));
+  read_result = buffer.read(read_data, str1.size() + str2.size());
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(str1.size() + str2.size(), read_result.value());
+  TEST_ASSERT_EQUAL_STRING("  abcxyz  ", read_data);
+}
+
+void test_FixedLengthLinearBuffer_format_to() {
+  malib::FixedLengthLinearBuffer<char, 32> buffer;
+
+  // Format directly into buffer using format_to with sizing_iterator
+  auto out =
+      std::format_to(buffer.format_begin(), "Test {:d}, {:.2f}", 42, 3.14159);
+  TEST_ASSERT_FALSE(buffer.empty());
+  auto chars_written = buffer.size();
+  TEST_ASSERT_GREATER_THAN(0, chars_written);
+
+  // Verify the content
+  char read_data[32] = {0};
+  auto read_result = buffer.read(read_data, chars_written);
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(chars_written, read_result.value());
+  TEST_ASSERT_EQUAL_STRING("Test 42, 3.14", read_data);
+
+  // Test multiple format_to operations
+  buffer.clear();
+  auto it = buffer.format_begin();
+  it = std::format_to(it, "{:>5}", "abc");
+  it = std::format_to(it, "{:<5}", "xyz");
+
+  TEST_ASSERT_GREATER_THAN(0, buffer.size());
+
+  // Read and verify combined result
+  std::memset(read_data, 0, sizeof(read_data));
+  read_result = buffer.read(read_data, buffer.size());
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL_STRING("  abcxyz  ", read_data);
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -543,4 +612,6 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_bitfields);
   RUN_TEST(test_FixedLengthLinearBuffer_iterators);
   RUN_TEST(test_FixedLengthLinearBuffer_iterators_string);
+  RUN_TEST(test_FixedLengthLinearBuffer_format_char);
+  RUN_TEST(test_FixedLengthLinearBuffer_format_to);
 }

@@ -14,6 +14,10 @@ namespace malib {
 template <typename T, size_t Capacity, bool ThreadSafe = false>
   requires std::copyable<T>
 class FixedLengthLinearBuffer {
+  // Forward declare the sizing_iterator as a private inner class
+  class sizing_iterator;
+  friend class sizing_iterator;
+
   static_assert(Capacity > 0);
   using value_type = T;
   using mutex_type = std::mutex;
@@ -178,6 +182,23 @@ class FixedLengthLinearBuffer {
 
   const_reverse_iterator crend() const noexcept { return rend(); }
 
+  // Keep the format_begin/end methods public
+  sizing_iterator format_begin() noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return sizing_iterator(buffer_.data(), this);
+    }
+    return sizing_iterator(buffer_.data(), this);
+  }
+
+  sizing_iterator format_end() noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return sizing_iterator(buffer_.data() + Capacity, this);
+    }
+    return sizing_iterator(buffer_.data() + Capacity, this);
+  }
+
  private:
   std::expected<std::size_t, Error> write_impl(const T* data,
                                                std::size_t size) {
@@ -248,9 +269,91 @@ class FixedLengthLinearBuffer {
     buffer_ = {};
   }
 
+  // Move set_size to private section
+  void set_size(size_t new_size) noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      current_size_ = std::min(new_size, Capacity);
+    } else {
+      current_size_ = std::min(new_size, Capacity);
+    }
+  }
+
   size_t current_size_{0};
   alignas(T) std::array<T, Capacity> buffer_{};
   [[no_unique_address]] mutable mutex_type mutex_;
+
+  // Move sizing_iterator definition here but keep it private
+  class sizing_iterator {
+   public:
+    // Iterator traits
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
+
+    sizing_iterator(pointer p, FixedLengthLinearBuffer* buffer)
+        : ptr_(p), buffer_(buffer) {}
+
+    // Assignment updates buffer size
+    sizing_iterator& operator=(const sizing_iterator& other) {
+      ptr_ = other.ptr_;
+      if (buffer_) {
+        buffer_->set_size(std::distance(buffer_->buffer_.data(), ptr_));
+      }
+      return *this;
+    }
+
+    // Required iterator operations
+    reference operator*() { return *ptr_; }
+    pointer operator->() { return ptr_; }
+
+    // Increment/decrement
+    sizing_iterator& operator++() {
+      ++ptr_;
+      if (buffer_) {
+        buffer_->set_size(std::distance(buffer_->buffer_.data(), ptr_));
+      }
+      return *this;
+    }
+
+    sizing_iterator operator++(int) {
+      sizing_iterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    // Arithmetic operations
+    sizing_iterator& operator+=(difference_type n) {
+      ptr_ += n;
+      if (buffer_) {
+        buffer_->set_size(std::distance(buffer_->buffer_.data(), ptr_));
+      }
+      return *this;
+    }
+
+    friend sizing_iterator operator+(sizing_iterator it, difference_type n) {
+      return it += n;
+    }
+
+    friend sizing_iterator operator+(difference_type n, sizing_iterator it) {
+      return it += n;
+    }
+
+    // Comparison operators
+    friend bool operator==(const sizing_iterator& a, const sizing_iterator& b) {
+      return a.ptr_ == b.ptr_;
+    }
+
+    friend bool operator!=(const sizing_iterator& a, const sizing_iterator& b) {
+      return !(a == b);
+    }
+
+   private:
+    pointer ptr_;
+    FixedLengthLinearBuffer* buffer_;
+  };
 };
 
 }  // namespace malib
