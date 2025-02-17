@@ -622,6 +622,56 @@ void test_FixedLengthLinearBuffer_format_to_boundary() {
   TEST_ASSERT_TRUE(buffer.full());
 }
 
+void test_FixedLengthLinearBuffer_string_view() {
+  // Test with char buffer
+  {
+    malib::FixedLengthLinearBuffer<char, 32> buffer;
+    
+    // Test empty buffer
+    auto view = buffer.as_string_view();
+    TEST_ASSERT_EQUAL(0, view.size());
+    TEST_ASSERT_TRUE(view.empty());
+
+    // Test with content
+    const char* test_str = "Hello, World!";
+    auto result = buffer.write(test_str, strlen(test_str));
+    TEST_ASSERT_TRUE(result.has_value());
+    
+    view = buffer.as_string_view();
+    TEST_ASSERT_EQUAL(strlen(test_str), view.size());
+    TEST_ASSERT_EQUAL_STRING(test_str, view.data());
+
+    // Test after partial read - read first 7 chars ("Hello, ")
+    char read_buf[8];
+    auto read_result = buffer.read(read_buf, 7);
+    TEST_ASSERT_TRUE(read_result.has_value());
+    TEST_ASSERT_EQUAL(7, read_result.value());
+    
+    view = buffer.as_string_view();
+    TEST_ASSERT_EQUAL(6, view.size());
+    TEST_ASSERT_EQUAL_STRING("World!", view.data());
+  }
+
+  // Test with wchar_t buffer
+  {
+    malib::FixedLengthLinearBuffer<wchar_t, 32> wbuffer;
+    
+    // Test empty buffer
+    auto view = wbuffer.as_wstring_view();
+    TEST_ASSERT_EQUAL(0, view.size());
+    TEST_ASSERT_TRUE(view.empty());
+
+    // Test with content
+    const wchar_t test_str[] = L"Hello, World!";
+    auto result = wbuffer.write(test_str, wcslen(test_str));
+    TEST_ASSERT_TRUE(result.has_value());
+    
+    view = wbuffer.as_wstring_view();
+    TEST_ASSERT_EQUAL(wcslen(test_str), view.size());
+    TEST_ASSERT_EQUAL(0, wmemcmp(test_str, view.data(), view.size()));
+  }
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -642,4 +692,5 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_format_char);
   RUN_TEST(test_FixedLengthLinearBuffer_format_to);
   RUN_TEST(test_FixedLengthLinearBuffer_format_to_boundary);
+  RUN_TEST(test_FixedLengthLinearBuffer_string_view);
 }

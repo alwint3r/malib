@@ -199,6 +199,18 @@ class FixedLengthLinearBuffer {
     return sizing_iterator(buffer_.data() + Capacity, this);
   }
 
+  std::wstring_view as_wstring_view() const noexcept
+    requires(std::same_as<T, wchar_t>)
+  {
+    return std::wstring_view(buffer_.data(), current_size_);
+  }
+
+  std::string_view as_string_view() const noexcept
+    requires(std::same_as<T, char>)
+  {
+    return std::string_view(begin(), end());
+  }
+
  private:
   std::expected<std::size_t, Error> write_impl(const T* data,
                                                std::size_t size) {
@@ -250,6 +262,11 @@ class FixedLengthLinearBuffer {
         std::memmove(buffer_.data(), buffer_.data() + read_size,
                      (current_size_ - read_size) * sizeof(T));
       }
+      // Clear the now unused portion of the buffer
+      if (current_size_ > read_size) {
+        std::memset(buffer_.data() + (current_size_ - read_size), 0,
+                    read_size * sizeof(T));
+      }
     } else {
       for (size_t i = 0; i < read_size; ++i) {
         data[i] = buffer_[i];
@@ -257,6 +274,10 @@ class FixedLengthLinearBuffer {
       // Move remaining data to front
       for (size_t i = 0; i < current_size_ - read_size; ++i) {
         buffer_[i] = std::move(buffer_[i + read_size]);
+      }
+      // Clear/reset the now unused elements
+      for (size_t i = current_size_ - read_size; i < current_size_; ++i) {
+        buffer_[i] = T();
       }
     }
 
