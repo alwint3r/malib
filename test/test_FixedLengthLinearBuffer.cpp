@@ -595,6 +595,33 @@ void test_FixedLengthLinearBuffer_format_to() {
   TEST_ASSERT_EQUAL_STRING("  abcxyz  ", read_data);
 }
 
+void test_FixedLengthLinearBuffer_format_to_boundary() {
+  malib::FixedLengthLinearBuffer<char, 10> buffer;
+
+  // Try to format a string that would exceed buffer capacity
+  auto it = buffer.format_begin();
+  it = std::format_to(it, "{:>12}", "test");  // Should truncate at buffer boundary
+
+  TEST_ASSERT_EQUAL(10, buffer.size());  // Buffer should be full but not overflown
+  TEST_ASSERT_TRUE(buffer.full());
+
+  // Verify the content
+  char read_data[11] = {0};  // +1 for null terminator
+  auto read_result = buffer.read(read_data, buffer.size());
+  TEST_ASSERT_TRUE(read_result.has_value());
+  TEST_ASSERT_EQUAL(10, read_result.value());
+  TEST_ASSERT_EQUAL(10, strlen(read_data));  // Ensure we got exactly 10 chars
+
+  // Try multiple format operations until buffer is full
+  buffer.clear();
+  it = buffer.format_begin();
+  it = std::format_to(it, "{:5}", "abc");    // Takes 5 chars
+  it = std::format_to(it, "{:>6}", "test");  // Would need 6 chars, gets only 5
+
+  TEST_ASSERT_EQUAL(10, buffer.size());
+  TEST_ASSERT_TRUE(buffer.full());
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -614,4 +641,5 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_iterators_string);
   RUN_TEST(test_FixedLengthLinearBuffer_format_char);
   RUN_TEST(test_FixedLengthLinearBuffer_format_to);
+  RUN_TEST(test_FixedLengthLinearBuffer_format_to_boundary);
 }
