@@ -471,6 +471,61 @@ void test_FixedLengthLinearBuffer_iterators() {
   }
 }
 
+void test_FixedLengthLinearBuffer_iterators_string() {
+  malib::FixedLengthLinearBuffer<std::string, 4> buffer;
+
+  // Test empty buffer iterators
+  TEST_ASSERT_TRUE(buffer.begin() == buffer.end());
+  TEST_ASSERT_TRUE(buffer.cbegin() == buffer.cend());
+  TEST_ASSERT_TRUE(buffer.rbegin() == buffer.rend());
+  TEST_ASSERT_TRUE(buffer.crbegin() == buffer.crend());
+
+  // Fill buffer with data
+  std::string data[] = {"one", "two", "three", "four"};
+  buffer.write(data, 4);
+
+  // Test non-const forward iteration and modification
+  {
+    std::string expected[] = {"one", "two", "three", "four"};
+    int i = 0;
+    for (auto& value : buffer) {
+      TEST_ASSERT_EQUAL_STRING(expected[i].c_str(), value.c_str());
+      value += "_mod";  // Modify through iterator
+      i++;
+    }
+  }
+
+  // Test const forward iteration with modified values
+  {
+    std::string expected[] = {"one_mod", "two_mod", "three_mod", "four_mod"};
+    int i = 0;
+    const auto& const_buffer = buffer;
+    for (const auto& value : const_buffer) {
+      TEST_ASSERT_EQUAL_STRING(expected[i].c_str(), value.c_str());
+      i++;
+    }
+  }
+
+  // Test reverse iteration with modified values
+  {
+    std::string expected[] = {"four_mod", "three_mod", "two_mod", "one_mod"};
+    int i = 0;
+    for (auto it = buffer.rbegin(); it != buffer.rend(); ++it) {
+      TEST_ASSERT_EQUAL_STRING(expected[i].c_str(), it->c_str());
+      i++;
+    }
+  }
+
+  // Test iterator arithmetic and comparison
+  {
+    auto it = buffer.begin();
+    TEST_ASSERT_EQUAL_STRING("two_mod", (*(it + 1)).c_str());
+    TEST_ASSERT_EQUAL_STRING("three_mod", (*(it + 2)).c_str());
+    TEST_ASSERT_TRUE(it < buffer.end());
+    TEST_ASSERT_TRUE(it + 4 == buffer.end());
+  }
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -487,4 +542,5 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_packed_structs);
   RUN_TEST(test_FixedLengthLinearBuffer_bitfields);
   RUN_TEST(test_FixedLengthLinearBuffer_iterators);
+  RUN_TEST(test_FixedLengthLinearBuffer_iterators_string);
 }
