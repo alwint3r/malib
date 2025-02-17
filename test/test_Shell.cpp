@@ -244,6 +244,26 @@ void test_Shell_outputBufferOverflow() {
   TEST_ASSERT_EQUAL_STRING("AAAAAAA", output.output.c_str());
 }
 
+void test_Shell_executeFromBuffer() {
+  malib::shell::tiny shell{};
+  shell.registerCommand("echo", [](std::string_view command,
+                                   malib::shell::arguments args, auto& output) {
+    auto arg = args[0].value();
+    return output.write(arg.data(), arg.size()).error_or(malib::Error::Ok);
+  });
+
+  malib::FixedLengthLinearBuffer<char, 64> command_buffer{};
+  const char* cmd = "echo Hello";
+  command_buffer.write(cmd, strlen(cmd));
+
+  std::string_view command_view(command_buffer.data(), command_buffer.size());
+
+  stub_output output{};
+  auto result = shell.execute(command_view, output);
+  TEST_ASSERT_EQUAL(malib::Error::Ok, result);
+  TEST_ASSERT_EQUAL_STRING("Hello", output.output.c_str());
+}
+
 void test_Shell() {
   RUN_TEST(test_Shell_addCommand);
   RUN_TEST(test_Shell_execute);
@@ -259,4 +279,5 @@ void test_Shell() {
   RUN_TEST(test_Shell_concurrentCommandExecution);
   RUN_TEST(test_Shell_outputBufferOverflow);
   RUN_TEST(test_Shell_commandFailureWithOutput);
+  RUN_TEST(test_Shell_executeFromBuffer);
 }
