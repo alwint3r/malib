@@ -61,15 +61,15 @@ struct BufferReader {
 
     return count;
   }
-  
+
   /**
    * Reads bytes from source until a delimiter is found or source is empty,
    * writing all read bytes (including delimiter) to destination.
-   * 
+   *
    * @param source The source container to read from
    * @param delimiter The value to stop reading at (inclusive)
    * @param destination The destination to write bytes to
-   * 
+   *
    * @return Number of bytes read and written on success, or an error
    */
   template <typename B, typename C>

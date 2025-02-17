@@ -26,8 +26,8 @@ class FixedLengthLinearBuffer {
  public:
   FixedLengthLinearBuffer() noexcept = default;
   ~FixedLengthLinearBuffer() noexcept = default;
-  FixedLengthLinearBuffer(const FixedLengthLinearBuffer&) = default;
-  FixedLengthLinearBuffer& operator=(const FixedLengthLinearBuffer&) = default;
+  FixedLengthLinearBuffer(const FixedLengthLinearBuffer&) = delete;
+  FixedLengthLinearBuffer& operator=(const FixedLengthLinearBuffer&) = delete;
   FixedLengthLinearBuffer(FixedLengthLinearBuffer&&) noexcept = default;
   FixedLengthLinearBuffer& operator=(FixedLengthLinearBuffer&&) noexcept =
       default;
