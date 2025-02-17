@@ -119,6 +119,65 @@ class FixedLengthLinearBuffer {
   const T* data() const noexcept { return buffer_.data(); }
   T* data() noexcept { return buffer_.data(); }
 
+  // Iterator types
+  using iterator = T*;
+  using const_iterator = const T*;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+  // Iterator methods
+  iterator begin() noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return buffer_.data();
+    }
+    return buffer_.data();
+  }
+
+  const_iterator begin() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return buffer_.data();
+    }
+    return buffer_.data();
+  }
+
+  const_iterator cbegin() const noexcept { return begin(); }
+
+  iterator end() noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return buffer_.data() + current_size_;
+    }
+    return buffer_.data() + current_size_;
+  }
+
+  const_iterator end() const noexcept {
+    if constexpr (ThreadSafe) {
+      lock_guard lock(mutex_);
+      return buffer_.data() + current_size_;
+    }
+    return buffer_.data() + current_size_;
+  }
+
+  const_iterator cend() const noexcept { return end(); }
+
+  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+
+  const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
+
+  const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+
+  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
+
+  const_reverse_iterator crend() const noexcept { return rend(); }
+
  private:
   std::expected<std::size_t, Error> write_impl(const T* data,
                                                std::size_t size) {

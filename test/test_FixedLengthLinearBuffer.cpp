@@ -410,6 +410,67 @@ void test_FixedLengthLinearBuffer_bitfields() {
   }
 }
 
+void test_FixedLengthLinearBuffer_iterators() {
+  malib::FixedLengthLinearBuffer<int, 4> buffer;
+
+  // Test empty buffer iterators
+  TEST_ASSERT_TRUE(buffer.begin() == buffer.end());
+  TEST_ASSERT_TRUE(buffer.cbegin() == buffer.cend());
+  TEST_ASSERT_TRUE(buffer.rbegin() == buffer.rend());
+  TEST_ASSERT_TRUE(buffer.crbegin() == buffer.crend());
+
+  // Fill buffer with data
+  int data[] = {1, 2, 3, 4};
+  buffer.write(data, 4);
+
+  // Test non-const forward iteration and modification
+  {
+    int expected = 1;
+    for (auto& value : buffer) {
+      TEST_ASSERT_EQUAL(expected++, value);
+      value *= 2;  // Modify through iterator
+    }
+  }
+
+  // Test const forward iteration with modified values
+  {
+    int expected[] = {2, 4, 6, 8};
+    int i = 0;
+    const auto& const_buffer = buffer;
+    for (const auto& value : const_buffer) {
+      TEST_ASSERT_EQUAL(expected[i++], value);
+    }
+  }
+
+  // Test reverse iteration with modified values
+  {
+    int expected[] = {8, 6, 4, 2};
+    int i = 0;
+    for (auto it = buffer.rbegin(); it != buffer.rend(); ++it) {
+      TEST_ASSERT_EQUAL(expected[i++], *it);
+    }
+  }
+
+  // Test const reverse iteration with modified values
+  {
+    int expected[] = {8, 6, 4, 2};
+    int i = 0;
+    const auto& const_buffer = buffer;
+    for (auto it = const_buffer.crbegin(); it != const_buffer.crend(); ++it) {
+      TEST_ASSERT_EQUAL(expected[i++], *it);
+    }
+  }
+
+  // Test iterator arithmetic and comparison
+  {
+    auto it = buffer.begin();
+    TEST_ASSERT_EQUAL(4, *(it + 1));  // Second element is now 4 (2*2)
+    TEST_ASSERT_EQUAL(6, *(it + 2));  // Third element is now 6 (3*2)
+    TEST_ASSERT_TRUE(it < buffer.end());
+    TEST_ASSERT_TRUE(it + 4 == buffer.end());
+  }
+}
+
 void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_trivially_copyable_type);
   RUN_TEST(test_FixedLengthLinearBuffer_non_trivially_copyable_type);
@@ -425,4 +486,5 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_aligned_structs);
   RUN_TEST(test_FixedLengthLinearBuffer_packed_structs);
   RUN_TEST(test_FixedLengthLinearBuffer_bitfields);
+  RUN_TEST(test_FixedLengthLinearBuffer_iterators);
 }
