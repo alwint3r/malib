@@ -11,7 +11,8 @@
 
 namespace malib {
 
-template <typename T, size_t Capacity, bool ThreadSafe = false>
+template <typename T, size_t Capacity, bool ThreadSafe = false,
+          bool ResetOnRead = false>
   requires std::copyable<T>
 class FixedLengthLinearBuffer {
   // Forward declare the sizing_iterator as a private inner class
@@ -262,10 +263,13 @@ class FixedLengthLinearBuffer {
         std::memmove(buffer_.data(), buffer_.data() + read_size,
                      (current_size_ - read_size) * sizeof(T));
       }
-      // Clear the now unused portion of the buffer
-      if (current_size_ > read_size) {
-        std::memset(buffer_.data() + (current_size_ - read_size), 0,
-                    read_size * sizeof(T));
+
+      if constexpr (ResetOnRead) {
+        // Clear the now unused portion of the buffer
+        if (current_size_ > read_size) {
+          std::memset(buffer_.data() + (current_size_ - read_size), 0,
+                      read_size * sizeof(T));
+        }
       }
     } else {
       for (size_t i = 0; i < read_size; ++i) {
@@ -275,9 +279,12 @@ class FixedLengthLinearBuffer {
       for (size_t i = 0; i < current_size_ - read_size; ++i) {
         buffer_[i] = std::move(buffer_[i + read_size]);
       }
-      // Clear/reset the now unused elements
-      for (size_t i = current_size_ - read_size; i < current_size_; ++i) {
-        buffer_[i] = T();
+
+      if constexpr (ResetOnRead) {
+        // Clear/reset the now unused elements
+        for (size_t i = current_size_ - read_size; i < current_size_; ++i) {
+          buffer_[i] = T();
+        }
       }
     }
 

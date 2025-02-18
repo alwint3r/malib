@@ -600,9 +600,11 @@ void test_FixedLengthLinearBuffer_format_to_boundary() {
 
   // Try to format a string that would exceed buffer capacity
   auto it = buffer.format_begin();
-  it = std::format_to(it, "{:>12}", "test");  // Should truncate at buffer boundary
+  it = std::format_to(it, "{:>12}",
+                      "test");  // Should truncate at buffer boundary
 
-  TEST_ASSERT_EQUAL(10, buffer.size());  // Buffer should be full but not overflown
+  TEST_ASSERT_EQUAL(10,
+                    buffer.size());  // Buffer should be full but not overflown
   TEST_ASSERT_TRUE(buffer.full());
 
   // Verify the content
@@ -626,7 +628,7 @@ void test_FixedLengthLinearBuffer_string_view() {
   // Test with char buffer
   {
     malib::FixedLengthLinearBuffer<char, 32> buffer;
-    
+
     // Test empty buffer
     auto view = buffer.as_string_view();
     TEST_ASSERT_EQUAL(0, view.size());
@@ -636,7 +638,7 @@ void test_FixedLengthLinearBuffer_string_view() {
     const char* test_str = "Hello, World!";
     auto result = buffer.write(test_str, strlen(test_str));
     TEST_ASSERT_TRUE(result.has_value());
-    
+
     view = buffer.as_string_view();
     TEST_ASSERT_EQUAL(strlen(test_str), view.size());
     TEST_ASSERT_EQUAL_STRING(test_str, view.data());
@@ -646,16 +648,16 @@ void test_FixedLengthLinearBuffer_string_view() {
     auto read_result = buffer.read(read_buf, 7);
     TEST_ASSERT_TRUE(read_result.has_value());
     TEST_ASSERT_EQUAL(7, read_result.value());
-    
+
     view = buffer.as_string_view();
     TEST_ASSERT_EQUAL(6, view.size());
-    TEST_ASSERT_EQUAL_STRING("World!", view.data());
+    TEST_ASSERT_EQUAL_STRING_LEN("World!", view.data(), view.size());
   }
 
   // Test with wchar_t buffer
   {
     malib::FixedLengthLinearBuffer<wchar_t, 32> wbuffer;
-    
+
     // Test empty buffer
     auto view = wbuffer.as_wstring_view();
     TEST_ASSERT_EQUAL(0, view.size());
@@ -665,10 +667,105 @@ void test_FixedLengthLinearBuffer_string_view() {
     const wchar_t test_str[] = L"Hello, World!";
     auto result = wbuffer.write(test_str, wcslen(test_str));
     TEST_ASSERT_TRUE(result.has_value());
-    
+
     view = wbuffer.as_wstring_view();
     TEST_ASSERT_EQUAL(wcslen(test_str), view.size());
     TEST_ASSERT_EQUAL(0, wmemcmp(test_str, view.data(), view.size()));
+  }
+}
+
+void test_FixedLengthLinearBuffer_reset_on_read() {
+  // Test with trivially copyable type
+  {
+    malib::FixedLengthLinearBuffer<int, 4, false, true> buffer;
+    int data[] = {1, 2, 3, 4};
+    buffer.write(data, 4);
+
+    // Read first two elements
+    int read_data[2];
+    auto result = buffer.read(read_data, 2);
+    TEST_ASSERT_TRUE(result.has_value());
+    TEST_ASSERT_EQUAL(2, result.value());
+    TEST_ASSERT_EQUAL(1, read_data[0]);
+    TEST_ASSERT_EQUAL(2, read_data[1]);
+
+    // Check remaining elements and verify reset area is zeroed
+    TEST_ASSERT_EQUAL(2, buffer.size());
+    auto* raw_buffer = buffer.data();
+    TEST_ASSERT_EQUAL(3, raw_buffer[0]);  // First remaining element
+    TEST_ASSERT_EQUAL(4, raw_buffer[1]);  // Second remaining element
+    TEST_ASSERT_EQUAL(0, raw_buffer[2]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[3]);  // Reset area
+  }
+
+  // Test with non-trivially copyable type
+  {
+    malib::FixedLengthLinearBuffer<std::string, 4, false, true> buffer;
+    std::string data[] = {"one", "two", "three", "four"};
+    buffer.write(data, 4);
+
+    // Read first two elements
+    std::string read_data[2];
+    auto result = buffer.read(read_data, 2);
+    TEST_ASSERT_TRUE(result.has_value());
+    TEST_ASSERT_EQUAL(2, result.value());
+    TEST_ASSERT_EQUAL_STRING("one", read_data[0].c_str());
+    TEST_ASSERT_EQUAL_STRING("two", read_data[1].c_str());
+
+    // Check remaining elements and verify reset area is empty strings
+    TEST_ASSERT_EQUAL(2, buffer.size());
+    auto* raw_buffer = buffer.data();
+    TEST_ASSERT_EQUAL_STRING("three",
+                             raw_buffer[0].c_str());  // First remaining element
+    TEST_ASSERT_EQUAL_STRING(
+        "four", raw_buffer[1].c_str());       // Second remaining element
+    TEST_ASSERT_TRUE(raw_buffer[2].empty());  // Reset area
+    TEST_ASSERT_TRUE(raw_buffer[3].empty());  // Reset area
+  }
+
+  // Test with partial reads
+  {
+    malib::FixedLengthLinearBuffer<int, 6, false, true> buffer;
+    int data[] = {1, 2, 3, 4, 5, 6};
+    buffer.write(data, 6);
+
+    // Read in multiple steps
+    int read_data[2];
+
+    // First read (2 elements)
+    auto result = buffer.read(read_data, 2);
+    TEST_ASSERT_TRUE(result.has_value());
+    TEST_ASSERT_EQUAL(2, result.value());
+    TEST_ASSERT_EQUAL(1, read_data[0]);
+    TEST_ASSERT_EQUAL(2, read_data[1]);
+    TEST_ASSERT_EQUAL(4, buffer.size());
+
+    // Check buffer state after first read
+    auto* raw_buffer = buffer.data();
+    TEST_ASSERT_EQUAL(3, raw_buffer[0]);
+    TEST_ASSERT_EQUAL(4, raw_buffer[1]);
+    TEST_ASSERT_EQUAL(5, raw_buffer[2]);
+    TEST_ASSERT_EQUAL(6, raw_buffer[3]);
+    TEST_ASSERT_EQUAL(0, raw_buffer[4]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[5]);  // Reset area
+
+    // Second read (3 elements)
+    int read_data2[3];
+    result = buffer.read(read_data2, 3);
+    TEST_ASSERT_TRUE(result.has_value());
+    TEST_ASSERT_EQUAL(3, result.value());
+    TEST_ASSERT_EQUAL(3, read_data2[0]);
+    TEST_ASSERT_EQUAL(4, read_data2[1]);
+    TEST_ASSERT_EQUAL(5, read_data2[2]);
+    TEST_ASSERT_EQUAL(1, buffer.size());
+
+    // Check buffer state after second read
+    TEST_ASSERT_EQUAL(6, raw_buffer[0]);
+    TEST_ASSERT_EQUAL(0, raw_buffer[1]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[2]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[3]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[4]);  // Reset area
+    TEST_ASSERT_EQUAL(0, raw_buffer[5]);  // Reset area
   }
 }
 
@@ -693,4 +790,5 @@ void test_FixedLengthLinearBuffer() {
   RUN_TEST(test_FixedLengthLinearBuffer_format_to);
   RUN_TEST(test_FixedLengthLinearBuffer_format_to_boundary);
   RUN_TEST(test_FixedLengthLinearBuffer_string_view);
+  RUN_TEST(test_FixedLengthLinearBuffer_reset_on_read);
 }
