@@ -1,6 +1,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <expected>
 #include <mutex>
 
 #include "Error.hpp"
@@ -27,6 +28,14 @@ class FixedSizeWaitableQueue {
     cv_.wait(lock, [this] { return !buffer_.empty(); });
     auto result = buffer_.pop();
     return *result;
+  }
+
+  std::expected<T, Error> try_pop() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (buffer_.empty()) {
+      return std::unexpected(Error::BufferEmpty);
+    }
+    return buffer_.pop();
   }
 
   bool empty() const {
