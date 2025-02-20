@@ -41,7 +41,7 @@ struct ObservableData {
   }
 
  private:
-  T data_;
+  T data_{};
   std::array<std::optional<NotificationCallback>, MaxSubscribers>
       subscribers_{};
   std::mutex mutex_{};

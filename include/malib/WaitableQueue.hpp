@@ -14,10 +14,12 @@ struct WaitableQueue {
     queue_.push(task);
     cv_.notify_one();
   }
+
   bool empty() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.empty();
   }
+
   T pop() {
     std::unique_lock<std::mutex> lock(mutex_);
     cv_.wait(lock, [this] { return !queue_.empty(); });
@@ -27,8 +29,8 @@ struct WaitableQueue {
   }
 
  private:
-  std::queue<T> queue_;
-  mutable std::mutex mutex_;
-  std::condition_variable cv_;
+  std::queue<T> queue_{};
+  mutable std::mutex mutex_{};
+  std::condition_variable cv_{};
 };
 };  // namespace malib
