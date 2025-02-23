@@ -168,6 +168,23 @@ class RingBuffer {
     count_ = 0;
   }
 
+  /**
+   * @brief Writes data to the ring buffer
+   * 
+   * This method writes the given data into the ring buffer according to the specified overwrite policy.
+   * For Discard policy, it will reject writes that would overflow the buffer.
+   * For Overwrite policy, it will overwrite old data if the buffer is full.
+   * 
+   * @param data Pointer to the source data array to write from
+   * @param size Number of elements to write
+   * 
+   * @return std::expected containing either:
+   *         - The number of elements successfully written
+   *         - Error::NullPointerInput if data pointer is null
+   *         - Error::BufferFull if buffer is full and policy is Discard
+   * 
+   * @thread_safety Thread-safe through internal mutex
+   */
   std::expected<std::size_t, Error> write(const T* data, std::size_t size) {
     std::scoped_lock<std::mutex> lock(mutex_);
 
@@ -214,6 +231,23 @@ class RingBuffer {
     return elements_written;
   }
 
+  /**
+   * @brief Reads data from the ring buffer into a provided array
+   * 
+   * This method reads up to the specified number of elements from the ring buffer
+   * into the provided array. The read operation is thread-safe and will remove
+   * the read elements from the buffer.
+   * 
+   * @param data Pointer to the array where data should be copied to
+   * @param size Maximum number of elements to read
+   * @return std::expected<std::size_t, Error> On success, returns the number of elements actually read.
+   *         On failure, returns Error::NullPointerInput if data pointer is null
+   * 
+   * @note The actual number of elements read may be less than the requested size
+   *       if the buffer contains fewer elements than requested
+   * 
+   * @thread_safety Thread-safe due to internal mutex lock
+   */
   std::expected<std::size_t, Error> read(T* data, std::size_t size) {
     std::scoped_lock<std::mutex> lock(mutex_);
 
