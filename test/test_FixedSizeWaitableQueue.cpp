@@ -7,6 +7,45 @@
 #include <thread>
 #include <vector>
 
+class MoveTracker {
+ public:
+  MoveTracker(int val = 0) : value(val) {}
+  MoveTracker(const MoveTracker& other) : value(other.value) { copy_count++; }
+  MoveTracker(MoveTracker&& other) noexcept : value(other.value) {
+    move_count++;
+    other.value = -1;
+  }
+
+  MoveTracker& operator=(const MoveTracker& other) {
+    if (this != &other) {
+      value = other.value;
+      copy_count++;
+    }
+    return *this;
+  }
+
+  MoveTracker& operator=(MoveTracker&& other) noexcept {
+    if (this != &other) {
+      value = other.value;
+      other.value = -1;
+      move_count++;
+    }
+    return *this;
+  }
+
+  static void reset_counters() {
+    move_count = 0;
+    copy_count = 0;
+  }
+
+  int value;
+  static int move_count;
+  static int copy_count;
+};
+
+int MoveTracker::move_count = 0;
+int MoveTracker::copy_count = 0;
+
 void test_FixedSizeWaitableQueue_with_callback_functions() {
   malib::FixedSizeWaitableQueue<std::function<void(const std::string&)>, 2>
       queue;
@@ -126,9 +165,33 @@ void test_FixedSizeWaitableQueue_try_pop() {
   TEST_ASSERT_EQUAL(malib::Error::BufferEmpty, result.error());
 }
 
+void test_FixedSizeWaitableQueue_push_semantics() {
+  malib::FixedSizeWaitableQueue<MoveTracker, 2> queue;
+  MoveTracker::reset_counters();
+
+  // Test move semantics
+  queue.push(MoveTracker(42));  // Should move
+  TEST_ASSERT_EQUAL(1, MoveTracker::move_count);
+  TEST_ASSERT_EQUAL(0, MoveTracker::copy_count);
+
+  // Test copy semantics
+  MoveTracker tracker(43);
+  queue.push(tracker);  // Should copy
+  TEST_ASSERT_EQUAL(1, MoveTracker::move_count);
+  TEST_ASSERT_EQUAL(1, MoveTracker::copy_count);
+
+  // Verify values
+  auto val1 = queue.pop();
+  auto val2 = queue.pop();
+  TEST_ASSERT_EQUAL(42, val1.value);
+  TEST_ASSERT_EQUAL(43, val2.value);
+  TEST_ASSERT_EQUAL(43, tracker.value);  // Original should be unchanged
+}
+
 void test_FixedSizeWaitableQueue() {
   RUN_TEST(test_FixedSizeWaitableQueue_with_callback_functions);
   RUN_TEST(test_FixedSizeWaitableQueue_threaded);
   RUN_TEST(test_FixedSizeWaitableQueue_pop_blocks_on_empty);
   RUN_TEST(test_FixedSizeWaitableQueue_try_pop);
+  RUN_TEST(test_FixedSizeWaitableQueue_push_semantics);
 }

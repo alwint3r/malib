@@ -11,16 +11,12 @@ namespace malib {
 template <typename T, size_t N>
 class FixedSizeWaitableQueue {
  public:
-  Error push(T task) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    if (buffer_.full()) {
-      return Error::QueueFull;
-    }
-    auto result = buffer_.push(std::move(task));
-    if (result == Error::Ok) {
-      cv_.notify_one();
-    }
-    return result;
+  Error push(T&& item) {
+    return push_impl(std::forward<T>(item));
+  }
+
+  Error push(const T& item) {
+    return push_impl(item);
   }
 
   T pop() {
@@ -49,6 +45,19 @@ class FixedSizeWaitableQueue {
   }
 
  private:
+  template <typename U>
+  Error push_impl(U&& item) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (buffer_.full()) {
+      return Error::QueueFull;
+    }
+    auto result = buffer_.push(std::forward<U>(item));
+    if (result == Error::Ok) {
+      cv_.notify_one();
+    }
+    return result;
+  }
+
   RingBuffer<T, N> buffer_;
   mutable std::mutex mutex_;
   std::condition_variable cv_;
