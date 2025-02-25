@@ -8,6 +8,20 @@
 #include "RingBuffer.hpp"
 
 namespace malib {
+/**
+ * @brief A thread-safe fixed-size queue with blocking and non-blocking operations
+ * 
+ * This class implements a fixed-size queue that can be safely accessed from multiple threads.
+ * It provides both blocking and non-blocking operations for pushing and popping elements.
+ * 
+ * @tparam T The type of elements stored in the queue
+ * @tparam N The fixed size of the queue
+ * 
+ * Thread safety: Thread safe. All public methods are protected by internal mutex
+ * 
+ * @note This implementation uses a condition variable for blocking operations
+ * @example
+ */
 template <typename T, size_t N>
 class FixedSizeWaitableQueue {
  public:

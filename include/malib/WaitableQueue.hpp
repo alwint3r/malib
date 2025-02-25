@@ -7,6 +7,17 @@
 #include "Error.hpp"
 
 namespace malib {
+/**
+ * @brief A thread-safe queue implementation that allows waiting for elements
+ * 
+ * WaitableQueue provides a synchronized queue with blocking operations. It uses
+ * mutex and condition variable to ensure thread safety and enable waiting for
+ * elements when the queue is empty.
+ * 
+ * @tparam T The type of elements stored in the queue
+ * 
+ * Thread safety: This class is thread-safe and can be safely accessed from multiple threads
+ */
 template <typename T>
 struct WaitableQueue {
   void push(T task) {
