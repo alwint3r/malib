@@ -18,9 +18,12 @@ namespace shell {
 
 using arguments = TokenViews;
 
+static constexpr auto ShellFixedLengthLinearBufferSize = 256;
+static constexpr auto ShellMaxTokensLength = 32;
+
 template <output_interface OutputBufferType =
-              FixedLengthLinearBuffer<char, 256>,
-          std::size_t MaxTokens = 32>
+              FixedLengthLinearBuffer<char, ShellFixedLengthLinearBufferSize>,
+          std::size_t MaxTokens = ShellMaxTokensLength>
 struct tiny {
   using callback =
       std::function<Error(std::string_view, arguments, OutputBufferType&)>;
@@ -70,7 +73,7 @@ struct tiny {
    * This function processes the input string, tokenizes it, validates the command,
    * and executes the corresponding callback if found in the registry.
    *
-   * @tparam byte_output_interface Auto-deduced output interface type that supports write operations
+   * @tparam output_interface Auto-deduced output interface type that supports write operations
    * 
    * @param input The command string to be executed
    * @param output The output interface where the command's result will be written
