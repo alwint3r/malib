@@ -11,6 +11,12 @@ struct stub_output {
     output = std::string(buf, size);
     return output.size();
   }
+
+  // required
+  std::expected<std::size_t, malib::Error> write(std::string_view view) {
+    output = std::string(view);
+    return output.size();
+  }
 };
 
 void test_Shell_addCommand() {

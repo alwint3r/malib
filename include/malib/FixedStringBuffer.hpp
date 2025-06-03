@@ -104,6 +104,16 @@ struct FixedStringBuffer {
     return size;
   }
 
+  std::expected<std::size_t, Error> write(std::string_view str) {
+    if (str.size() + size_ > MaxSize) {
+      return std::unexpected(Error::MaximumSizeExceeded);
+    }
+
+    std::memcpy(buf_.data() + size_, str.data(), str.size());
+    size_ += str.size();
+    return str.size();
+  }
+
  private:
   std::array<char, MaxSize> buf_{0};
   std::size_t size_{0};

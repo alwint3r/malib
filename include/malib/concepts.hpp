@@ -82,6 +82,20 @@ concept byte_output_interface = requires(T t) {
 };
 
 template <typename T>
+concept string_output_interface = requires(T t) {
+  {
+    t.write(std::declval<std::string_view>())
+  } -> std_expected_any_error<std::size_t>;
+} || requires(T t) {
+  {
+    t.write(std::declval<std::string_view>())
+  } -> std::convertible_to<std::size_t>;
+};
+
+template <typename T>
+concept output_interface = byte_output_interface<T> && string_output_interface<T>;
+
+template <typename T>
 concept raw_accessible = requires(T t) {
   typename T::value_type;
   { t.data() } -> std::same_as<typename T::value_type *>;

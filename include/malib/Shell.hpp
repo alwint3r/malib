@@ -18,7 +18,7 @@ namespace shell {
 
 using arguments = TokenViews;
 
-template <byte_output_interface OutputBufferType =
+template <output_interface OutputBufferType =
               FixedLengthLinearBuffer<char, 256>,
           std::size_t MaxTokens = 32>
 struct tiny {
@@ -89,7 +89,7 @@ struct tiny {
    *       to the provided output interface
    *
    */
-  Error execute(std::string_view input, byte_output_interface auto& output) {
+  Error execute(std::string_view input, output_interface auto& output) {
     std::lock_guard<std::mutex> lock(mutex_);
     static constexpr std::string_view invalid_command_message =
         "Invalid command\n";
@@ -107,8 +107,7 @@ struct tiny {
 
     auto command = tokenizer_.tokens_span()[0].view(input);
     if (!isCommandValid(command)) {
-      output.write(invalid_command_message.data(),
-                   invalid_command_message.size());
+      output.write(invalid_command_message);
       return Error::InvalidCommand;
     }
 
@@ -119,7 +118,7 @@ struct tiny {
 
     auto command_cb = registry_[command];
     if (command_cb == nullptr) {
-      output.write(no_command_message.data(), no_command_message.size());
+      output.write(no_command_message);
       return Error::NullPointerMember;
     }
 

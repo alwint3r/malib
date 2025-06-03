@@ -212,6 +212,12 @@ class FixedLengthLinearBuffer {
     return std::string_view(begin(), end());
   }
 
+  std::expected<std::size_t, Error> write(std::string_view str) 
+    requires(std::same_as<T, char>)
+  {
+    return write(str.data(), str.size());
+  }
+
  private:
   std::expected<std::size_t, Error> write_impl(const T* data,
                                                std::size_t size) {
