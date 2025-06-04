@@ -70,6 +70,12 @@ concept byte_input_interface = requires(T t, char *buffer, std::size_t size) {
   { t.read(buffer, size) } -> std::same_as<std::size_t>;
 };
 
+/// @brief A concept that defines a byte-oriented output interface
+/// @details Types satisfying this concept must provide a write method that takes a pointer
+/// to raw bytes and a size. The write method must return either:
+/// - std::expected<std::size_t, E> where E is any error type, or
+/// - A type convertible to std::size_t (for APIs that don't use expected)
+/// The return value indicates the number of bytes actually written.
 template <typename T>
 concept byte_output_interface = requires(T t) {
   {
@@ -81,6 +87,12 @@ concept byte_output_interface = requires(T t) {
   } -> std::convertible_to<std::size_t>;
 };
 
+/// @brief A concept that defines a string-oriented output interface
+/// @details Types satisfying this concept must provide a write method that takes a
+/// std::string_view. The write method must return either:
+/// - std::expected<std::size_t, E> where E is any error type, or
+/// - A type convertible to std::size_t (for APIs that don't use expected)
+/// The return value indicates the number of characters actually written.
 template <typename T>
 concept string_output_interface = requires(T t) {
   {
@@ -92,6 +104,12 @@ concept string_output_interface = requires(T t) {
   } -> std::convertible_to<std::size_t>;
 };
 
+/// @brief A concept that combines both byte and string output interfaces
+/// @details Types satisfying this concept must implement both byte_output_interface
+/// and string_output_interface. This means they must provide:
+/// - write(const char*, std::size_t) for raw byte output
+/// - write(std::string_view) for string output
+/// This concept is useful for types that need to handle both binary and text data.
 template <typename T>
 concept output_interface = byte_output_interface<T> && string_output_interface<T>;
 
