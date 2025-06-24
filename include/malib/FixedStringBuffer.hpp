@@ -14,6 +14,19 @@ struct FixedStringBuffer {
   using iterator = decltype(std::declval<container_type>().begin());
   using const_iterator = decltype(std::declval<container_type>().cbegin());
 
+  FixedStringBuffer() = default;
+
+  FixedStringBuffer(const char* str) {
+    if (str) {
+      std::size_t len = std::strlen(str);
+      if (len > MaxSize) len = MaxSize;
+      std::memcpy(buf_.data(), str, len);
+      size_ = len;
+    } else {
+      size_ = 0;
+    }
+  }
+
   Error copy(std_string auto value) {
     if constexpr (std::is_same_v<std::remove_cv_t<
                                      std::remove_reference_t<decltype(value)>>,
