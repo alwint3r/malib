@@ -16,11 +16,13 @@ struct FixedStringBuffer {
 
   FixedStringBuffer() = default;
 
-  FixedStringBuffer(const char* str) {
+  constexpr FixedStringBuffer(const char* str) {
     if (str) {
-      std::size_t len = std::strlen(str);
-      if (len > MaxSize) len = MaxSize;
-      std::memcpy(buf_.data(), str, len);
+      std::size_t len = 0;
+      while (len < MaxSize && str[len] != '\0') {
+        buf_[len] = str[len];
+        ++len;
+      }
       size_ = len;
     } else {
       size_ = 0;
@@ -133,4 +135,6 @@ struct FixedStringBuffer {
 };
 
 static_assert(raw_accessible<FixedStringBuffer<256>>);
+static_assert(sizeof(FixedStringBuffer<32>) == (32 + sizeof(std::size_t)));
+static_assert(sizeof(FixedStringBuffer<8>) == (8 + sizeof(std::size_t)));
 }  // namespace malib
